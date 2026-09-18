@@ -3,10 +3,9 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.models import Subscription
 
 CURRENCY_LABELS = {
-    "RUB": "🇷🇺 RUB (₽)",
     "BYN": "🇧🇾 BYN (Br)",
+    "RUB": "🇷🇺 RUB (₽)",
     "USD": "🇺🇸 USD ($)",
-    "EUR": "🇪🇺 EUR (€)",
     "PLN": "🇵🇱 PLN (zł)",
 }
 
@@ -14,14 +13,11 @@ CURRENCY_LABELS = {
 def get_currency_keyboard() -> InlineKeyboardMarkup:
     buttons = [
         [
-            InlineKeyboardButton(text="🇷🇺 RUB (₽)", callback_data="curr_RUB"),
             InlineKeyboardButton(text="🇧🇾 BYN (Br)", callback_data="curr_BYN"),
+            InlineKeyboardButton(text="🇷🇺 RUB (₽)", callback_data="curr_RUB"),
         ],
         [
             InlineKeyboardButton(text="🇺🇸 USD ($)", callback_data="curr_USD"),
-            InlineKeyboardButton(text="🇪🇺 EUR (€)", callback_data="curr_EUR"),
-        ],
-        [
             InlineKeyboardButton(text="🇵🇱 PLN (zł)", callback_data="curr_PLN"),
         ],
     ]
@@ -114,14 +110,11 @@ def get_edit_fields_keyboard(sub_id: int) -> InlineKeyboardMarkup:
 def get_edit_currency_keyboard(sub_id: int) -> InlineKeyboardMarkup:
     buttons = [
         [
-            InlineKeyboardButton(text="🇷🇺 RUB (₽)", callback_data=f"set_curr_{sub_id}_RUB"),
             InlineKeyboardButton(text="🇧🇾 BYN (Br)", callback_data=f"set_curr_{sub_id}_BYN"),
+            InlineKeyboardButton(text="🇷🇺 RUB (₽)", callback_data=f"set_curr_{sub_id}_RUB"),
         ],
         [
             InlineKeyboardButton(text="🇺🇸 USD ($)", callback_data=f"set_curr_{sub_id}_USD"),
-            InlineKeyboardButton(text="🇪🇺 EUR (€)", callback_data=f"set_curr_{sub_id}_EUR"),
-        ],
-        [
             InlineKeyboardButton(text="🇵🇱 PLN (zł)", callback_data=f"set_curr_{sub_id}_PLN"),
         ],
         [
