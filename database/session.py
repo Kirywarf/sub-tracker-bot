@@ -3,12 +3,19 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from config import settings
 from database.models import Base
 
-engine = create_async_engine(
-    settings.DB_URL,
-    echo=False,
-    pool_pre_ping=True,
-    pool_recycle=300,
-)
+engine_kwargs = {
+    "echo": False,
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
+
+if "asyncpg" in settings.DB_URL:
+    engine_kwargs["connect_args"] = {
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    }
+
+engine = create_async_engine(settings.DB_URL, **engine_kwargs)
 
 async_session_factory = async_sessionmaker(
     bind=engine,

@@ -56,6 +56,9 @@ async def main() -> None:
         )
 
     # Ensure database schema is ready (with retry for Neon serverless cold starts)
+    import re
+    masked_db = re.sub(r':([^@]+)@', ':****@', settings.DB_URL)
+    logger.info(f"Target database: {masked_db}")
     logger.info("Connecting to database and verifying schema...")
     for attempt in range(1, 4):
         try:
@@ -67,10 +70,11 @@ async def main() -> None:
             if attempt < 3:
                 await asyncio.sleep(2)
             else:
-                logger.error(
-                    f"CRITICAL: Could not connect to database after 3 attempts. "
-                    f"Please verify DB_URL in Render Environment settings. Details: {e}"
-                )
+                logger.error("=" * 60)
+                logger.error(f"CRITICAL: Failed to connect to database: {e}")
+                logger.error(f"Error type: {type(e).__name__}")
+                logger.error(f"Database target was: {masked_db}")
+                logger.error("=" * 60)
                 raise
 
     bot = Bot(
