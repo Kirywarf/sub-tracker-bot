@@ -26,7 +26,7 @@ from bot.handlers.subscriptions import (
     cb_set_edit_currency,
     process_edit_value,
 )
-from bot.handlers.analytics import show_analytics
+from bot.handlers.analytics import show_analytics, cb_switch_analytics_currency
 from bot.states.subscription_states import AddSubscriptionStates, EditSubscriptionStates
 from database.requests import get_or_create_user, get_user_subscriptions, add_subscription, get_subscription_by_id
 
@@ -291,6 +291,15 @@ async def test_analytics_handler(test_session):
         period_days=30,
         next_billing_date=date(2026, 10, 1),
     )
+    await add_subscription(
+        session=test_session,
+        user_id=12345,
+        service_name="Netflix",
+        price=10.0,
+        currency="USD",
+        period_days=30,
+        next_billing_date=date(2026, 10, 1),
+    )
 
     msg = make_mock_message("/analytics")
     await show_analytics(msg, test_session)
@@ -299,4 +308,33 @@ async def test_analytics_handler(test_session):
     caption = msg.answer_photo.call_args.kwargs["caption"]
     assert "Аналитика регулярных расходов" in caption
     assert "Яндекс Плюс" in caption
+    assert "Netflix" in caption
     assert "RUB" in caption
+    reply_markup = msg.answer_photo.call_args.kwargs["reply_markup"]
+    assert reply_markup is not None
+
+
+@pytest.mark.asyncio
+async def test_cb_switch_analytics_currency(test_session):
+    await get_or_create_user(test_session, telegram_id=12345)
+    await add_subscription(
+        session=test_session,
+        user_id=12345,
+        service_name="Spotify",
+        price=10.0,
+        currency="USD",
+        period_days=30,
+        next_billing_date=date(2026, 10, 1),
+    )
+
+    cb = make_mock_callback_query("analytics_curr_BYN", user_id=12345)
+    cb.message.edit_media = AsyncMock()
+    await cb_switch_analytics_currency(cb, test_session)
+
+    cb.answer.assert_called_once()
+    assert "BYN" in cb.answer.call_args[0][0]
+    cb.message.edit_media.assert_called_once()
+    media = cb.message.edit_media.call_args.kwargs["media"]
+    assert "BYN" in media.caption
+    assert "Spotify" in media.caption
+

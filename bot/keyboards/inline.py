@@ -122,3 +122,25 @@ def get_edit_currency_keyboard(sub_id: int) -> InlineKeyboardMarkup:
         ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_analytics_currency_keyboard(active_currency: str) -> InlineKeyboardMarkup:
+    active = active_currency.upper().strip()
+    currencies = [
+        ("BYN", "🇧🇾 BYN"),
+        ("RUB", "🇷🇺 RUB"),
+        ("USD", "🇺🇸 USD"),
+        ("PLN", "🇵🇱 PLN"),
+    ]
+    buttons = []
+    row = []
+    for code, label in currencies:
+        btn_text = f"• {label} •" if code == active else label
+        row.append(InlineKeyboardButton(text=btn_text, callback_data=f"analytics_curr_{code}"))
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+

@@ -20,17 +20,30 @@ def build_expense_pie_chart(
     buf = io.BytesIO()
     fig, ax = plt.subplots(figsize=(8, 6), dpi=120)
 
+    curr_symbols = {
+        "RUB": "₽",
+        "BYN": "Br",
+        "USD": "$",
+        "EUR": "€",
+        "PLN": "zł",
+    }
+    curr_sym = curr_symbols.get(currency.upper().strip(), currency)
+
     try:
         # Background styling
         fig.patch.set_facecolor("#1e1e2e")
         ax.set_facecolor("#1e1e2e")
 
-        if not services_data:
+        # Filter out negative or non-numeric costs
+        valid_services = [s for s in services_data if s.get("annual_cost", 0) > 0]
+        total_expense = sum(s["annual_cost"] for s in valid_services)
+
+        if not valid_services or total_expense <= 0:
             # Empty state graphic
             ax.text(
                 0.5,
                 0.5,
-                "Нет данных о подписках",
+                "Нет данных о расходах",
                 color="#cdd6f4",
                 fontsize=16,
                 ha="center",
@@ -39,7 +52,7 @@ def build_expense_pie_chart(
             ax.axis("off")
         else:
             # Sort by cost descending
-            sorted_data = sorted(services_data, key=lambda x: x["annual_cost"], reverse=True)
+            sorted_data = sorted(valid_services, key=lambda x: x["annual_cost"], reverse=True)
 
             # If more than 6, group smaller into 'Другие'
             if len(sorted_data) > 6:
@@ -49,7 +62,10 @@ def build_expense_pie_chart(
             else:
                 plot_items = sorted_data
 
-            labels = [item["name"] for item in plot_items]
+            def truncate_label(name: str) -> str:
+                return name if len(name) <= 18 else name[:16] + "…"
+
+            labels = [truncate_label(item["name"]) for item in plot_items]
             costs = [item["annual_cost"] for item in plot_items]
 
             # Curated modern pastel/vibrant palette
@@ -64,12 +80,18 @@ def build_expense_pie_chart(
             ]
 
             def make_autopct(values):
+                total = sum(values)
                 def my_autopct(pct):
-                    total = sum(values)
-                    val = int(round(pct * total / 100.0))
-                    if pct < 4:
+                    val = pct * total / 100.0
+                    if pct < 5:
                         return ""
-                    return f"{pct:.1f}%\n({val:d} {currency})"
+                    if val >= 100:
+                        val_str = f"{val:,.0f}"
+                    elif val >= 10:
+                        val_str = f"{val:,.1f}"
+                    else:
+                        val_str = f"{val:.2f}"
+                    return f"{pct:.1f}%\n({val_str} {curr_sym})"
                 return my_autopct
 
             wedges, texts, autotexts = ax.pie(
@@ -94,7 +116,7 @@ def build_expense_pie_chart(
                 autotext.set_weight("bold")
 
             ax.set_title(
-                f"Структура годовых расходов ({currency})",
+                f"Структура годовых расходов ({curr_sym})",
                 color="#cdd6f4",
                 fontsize=15,
                 fontweight="bold",
@@ -128,9 +150,18 @@ def build_monthly_projection_bar_chart(
         months = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]
         x = range(len(months))
 
+        curr_symbols = {
+            "RUB": "₽",
+            "BYN": "Br",
+            "USD": "$",
+            "EUR": "€",
+            "PLN": "zł",
+        }
+        curr_sym = curr_symbols.get(currency.upper().strip(), currency)
+
         bars = ax.bar(x, monthly_breakdown, color="#89b4fa", edgecolor="#b4befe", linewidth=1, width=0.6)
 
-        ax.set_title(f"Прогнозируемые траты по месяцам ({currency})", color="#cdd6f4", fontsize=14, fontweight="bold", pad=15)
+        ax.set_title(f"Прогнозируемые траты по месяцам ({curr_sym})", color="#cdd6f4", fontsize=14, fontweight="bold", pad=15)
         ax.set_xticks(x)
         ax.set_xticklabels(months, color="#cdd6f4", fontsize=10)
         ax.tick_params(axis="y", colors="#cdd6f4")

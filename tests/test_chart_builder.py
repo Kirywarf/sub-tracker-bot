@@ -42,3 +42,21 @@ def test_build_monthly_bar_chart_and_no_leak():
     assert len(content) > 0
     assert content.startswith(b"\x89PNG\r\n\x1a\n")
     assert len(plt.get_fignums()) == 0
+
+
+def test_build_expense_pie_chart_currencies_and_labels():
+    plt.close("all")
+    data = [
+        {"name": "Very Long Subscription Name That Should Be Truncated", "annual_cost": 150.0},
+        {"name": "Netflix", "annual_cost": 50.0},
+        {"name": "Spotify", "annual_cost": 25.5},
+        {"name": "Free Service", "annual_cost": 0.0},
+    ]
+
+    for curr in ["BYN", "USD", "PLN", "EUR"]:
+        buf = build_expense_pie_chart(data, currency=curr)
+        content = buf.getvalue()
+        assert len(content) > 0
+        assert content.startswith(b"\x89PNG\r\n\x1a\n")
+        assert len(plt.get_fignums()) == 0
+

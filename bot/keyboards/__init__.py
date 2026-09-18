@@ -8,6 +8,7 @@ from bot.keyboards.inline import (
     get_delete_confirm_keyboard,
     get_edit_fields_keyboard,
     get_edit_currency_keyboard,
+    get_analytics_currency_keyboard,
 )
 
 __all__ = [
@@ -21,4 +22,6 @@ __all__ = [
     "get_delete_confirm_keyboard",
     "get_edit_fields_keyboard",
     "get_edit_currency_keyboard",
+    "get_analytics_currency_keyboard",
 ]
+

@@ -1,27 +1,31 @@
+import logging
 from collections import defaultdict
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, BufferedInputFile
+from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.requests import get_user_subscriptions
 from services.chart_builder import build_expense_pie_chart
+from services.currency import (
+    CURRENCY_DISPLAY,
+    get_exchange_rates,
+    get_exchange_rates_sync,
+    convert_currency,
+    detect_default_currency,
+)
+from bot.keyboards.inline import get_analytics_currency_keyboard
+
+logger = logging.getLogger(__name__)
 
 router = Router(name="analytics")
-
-CURRENCY_DISPLAY = {
-    "RUB": "₽",
-    "BYN": "Br",
-    "USD": "$",
-    "EUR": "€",
-    "PLN": "zł",
-}
 
 
 def calculate_annual_metrics(subscriptions) -> Dict[str, Any]:
     """
     Computes annual forecast and top-3 services grouped by currency.
+    Kept for backward compatibility.
     """
     currencies_data = defaultdict(lambda: {"total_annual": 0.0, "services": []})
 
@@ -51,6 +55,108 @@ def calculate_annual_metrics(subscriptions) -> Dict[str, Any]:
     return result
 
 
+def calculate_unified_metrics(
+    subscriptions,
+    target_currency: str = "RUB",
+    rates: Optional[Dict[str, float]] = None,
+) -> Dict[str, Any]:
+    """
+    Converts all active subscriptions to a single target currency,
+    calculates unified annual/monthly metrics and sorted service rankings.
+    """
+    target_curr = target_currency.upper().strip()
+    current_rates = rates if rates is not None else get_exchange_rates_sync()
+
+    converted_services = []
+    currencies_used = set()
+
+    for sub in subscriptions:
+        if not getattr(sub, "is_active", True):
+            continue
+
+        orig_curr = getattr(sub, "currency", "RUB").upper().strip()
+        currencies_used.add(orig_curr)
+
+        orig_annual = (365.0 / sub.period_days) * sub.price
+        converted_annual = convert_currency(
+            amount=orig_annual,
+            from_curr=orig_curr,
+            to_curr=target_curr,
+            rates=current_rates,
+        )
+        converted_monthly = converted_annual / 12.0
+
+        converted_services.append({
+            "name": sub.service_name,
+            "annual_cost": converted_annual,
+            "monthly_cost": converted_monthly,
+            "original_price": sub.price,
+            "original_currency": orig_curr,
+            "period_days": sub.period_days,
+            "is_converted": (orig_curr != target_curr),
+        })
+
+    sorted_services = sorted(converted_services, key=lambda x: x["annual_cost"], reverse=True)
+    total_annual = sum(s["annual_cost"] for s in sorted_services)
+    monthly_avg = total_annual / 12.0 if sorted_services else 0.0
+
+    has_multiple_currencies = (
+        len(currencies_used) > 1 or (len(currencies_used) == 1 and target_curr not in currencies_used)
+    )
+
+    return {
+        "target_currency": target_curr,
+        "total_annual": total_annual,
+        "monthly_avg": monthly_avg,
+        "services_count": len(sorted_services),
+        "services": sorted_services,
+        "top_services": sorted_services[:5],
+        "currencies_used": sorted(list(currencies_used)),
+        "has_multiple_currencies": has_multiple_currencies,
+        "rates": current_rates,
+    }
+
+
+def format_analytics_caption(metrics: Dict[str, Any]) -> str:
+    """
+    Generates a readable HTML report caption for the analytics photo.
+    """
+    target_curr = metrics["target_currency"]
+    curr_sym = CURRENCY_DISPLAY.get(target_curr, target_curr)
+
+    text_blocks = [
+        "📊 <b>Аналитика регулярных расходов</b>\n",
+        f"💱 <b>Все расходы приведены к: {curr_sym} ({target_curr})</b>\n",
+        f"• Прогноз на год: <b>{metrics['total_annual']:,.2f} {curr_sym}</b>",
+        f"• Средняя нагрузка в месяц: <b>{metrics['monthly_avg']:,.2f} {curr_sym}</b>",
+        f"• Активных сервисов: <b>{metrics['services_count']}</b>\n",
+    ]
+
+    if metrics["services_count"] > 0:
+        text_blocks.append("🏆 <b>Топ затратных сервисов в год:</b>")
+        for idx, s in enumerate(metrics["top_services"], 1):
+            orig_sym = CURRENCY_DISPLAY.get(s["original_currency"], s["original_currency"])
+            if s["is_converted"]:
+                text_blocks.append(
+                    f"  {idx}. <b>{s['name']}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
+                    f"({s['original_price']:g} {orig_sym} / {s['period_days']} дн.)"
+                )
+            else:
+                text_blocks.append(
+                    f"  {idx}. <b>{s['name']}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
+                    f"({s['original_price']:g} {curr_sym} / {s['period_days']} дн.)"
+                )
+        text_blocks.append("")
+
+    if metrics["has_multiple_currencies"]:
+        text_blocks.append(
+            "ℹ️ <i>Подписки в разных валютах пересчитаны по курсу. "
+            "Выберите валюту ниже для переключения:</i>"
+        )
+
+    return "\n".join(text_blocks).strip()
+
+
 @router.message(Command("analytics"))
 @router.message(F.text == "📊 Аналитика")
 async def show_analytics(message: Message, session: AsyncSession) -> None:
@@ -65,41 +171,52 @@ async def show_analytics(message: Message, session: AsyncSession) -> None:
         )
         return
 
-    metrics = calculate_annual_metrics(subs)
+    rates = await get_exchange_rates()
+    target_curr = detect_default_currency(subs)
+    metrics = calculate_unified_metrics(subs, target_currency=target_curr, rates=rates)
 
-    # Pick dominant currency for chart
-    dominant_curr = max(metrics.keys(), key=lambda c: metrics[c]["total_annual"])
-    dominant_data = metrics[dominant_curr]
-
-    # Generate pie chart
-    chart_buf = build_expense_pie_chart(dominant_data["all_services"], currency=dominant_curr)
+    # Generate pie chart with ALL converted services
+    chart_buf = build_expense_pie_chart(metrics["services"], currency=target_curr)
     chart_bytes = chart_buf.read()
     input_file = BufferedInputFile(chart_bytes, filename="analytics.png")
 
-    # Format text report
-    text_blocks = ["📊 <b>Аналитика регулярных расходов</b>\n"]
-
-    for curr, data in metrics.items():
-        curr_sym = CURRENCY_DISPLAY.get(curr, curr)
-        text_blocks.append(
-            f"<b>Валюта: {curr_sym} ({curr})</b>\n"
-            f"• Прогноз на год: <b>{data['total_annual']:,.2f} {curr_sym}</b>\n"
-            f"• Средняя нагрузка в месяц: <b>{data['monthly_avg']:,.2f} {curr_sym}</b>\n"
-            f"• Активных сервисов: <b>{data['services_count']}</b>\n"
-        )
-
-        text_blocks.append("🏆 <b>Топ затратных сервисов в год:</b>")
-        for idx, s in enumerate(data["top_3"], 1):
-            text_blocks.append(
-                f"  {idx}. <b>{s['name']}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
-                f"({s['price']:g} {curr_sym} / {s['period_days']} дн.)"
-            )
-        text_blocks.append("")
-
-    caption_text = "\n".join(text_blocks).strip()
+    caption_text = format_analytics_caption(metrics)
+    reply_markup = get_analytics_currency_keyboard(target_curr)
 
     await message.answer_photo(
         photo=input_file,
         caption=caption_text,
+        reply_markup=reply_markup,
         parse_mode="HTML",
     )
+
+
+@router.callback_query(F.data.startswith("analytics_curr_"))
+async def cb_switch_analytics_currency(callback: CallbackQuery, session: AsyncSession) -> None:
+    target_curr = callback.data.split("_")[-1].upper()
+    subs = await get_user_subscriptions(session, callback.from_user.id, active_only=True)
+
+    if not subs:
+        await callback.answer("Нет активных подписок для анализа", show_alert=True)
+        return
+
+    rates = await get_exchange_rates()
+    metrics = calculate_unified_metrics(subs, target_currency=target_curr, rates=rates)
+
+    chart_buf = build_expense_pie_chart(metrics["services"], currency=target_curr)
+    chart_bytes = chart_buf.read()
+    input_file = BufferedInputFile(chart_bytes, filename="analytics.png")
+
+    caption_text = format_analytics_caption(metrics)
+    reply_markup = get_analytics_currency_keyboard(target_curr)
+
+    media = InputMediaPhoto(media=input_file, caption=caption_text, parse_mode="HTML")
+    try:
+        if callback.message:
+            await callback.message.edit_media(media=media, reply_markup=reply_markup)
+    except Exception as e:
+        logger.debug(f"Ignored edit_media error (likely identical content): {e}")
+
+    curr_sym = CURRENCY_DISPLAY.get(target_curr, target_curr)
+    await callback.answer(f"Переключено на {curr_sym} ({target_curr})")
+
