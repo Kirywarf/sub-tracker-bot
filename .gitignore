@@ -1,0 +1,29 @@
+﻿# Virtual environment
+.venv/
+env/
+venv/
+
+# Environment variables & secrets
+.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache & build
+__pycache__/
+*.py[cod]
+*.class
+*.egg-info/
+dist/
+build/
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
