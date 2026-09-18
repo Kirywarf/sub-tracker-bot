@@ -9,6 +9,9 @@ def normalize_db_url(url: str) -> str:
     """Normalizes database URL to ensure compatibility with asyncpg (e.g. Neon, Render)."""
     if not url:
         return url
+    url = url.strip().strip("'\"")
+    if url.startswith("psql "):
+        url = url[5:].strip().strip("'\"")
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
     elif url.startswith("postgresql://"):

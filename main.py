@@ -48,8 +48,30 @@ async def main() -> None:
     if settings.PORT > 0:
         health_runner = await start_health_server(settings.PORT)
 
-    # Ensure database schema is ready
-    await init_models()
+    # Check BOT_TOKEN configuration
+    if not settings.BOT_TOKEN or settings.BOT_TOKEN == "123456789:ABCdefGHIjklMNOpqrsTUVwxyz":
+        logger.error(
+            "CRITICAL: BOT_TOKEN is missing or set to default placeholder! "
+            "Please configure BOT_TOKEN in Render Environment variables."
+        )
+
+    # Ensure database schema is ready (with retry for Neon serverless cold starts)
+    logger.info("Connecting to database and verifying schema...")
+    for attempt in range(1, 4):
+        try:
+            await init_models()
+            logger.info("Database schema initialized successfully.")
+            break
+        except Exception as e:
+            logger.warning(f"Database connection attempt {attempt}/3 failed: {e}")
+            if attempt < 3:
+                await asyncio.sleep(2)
+            else:
+                logger.error(
+                    f"CRITICAL: Could not connect to database after 3 attempts. "
+                    f"Please verify DB_URL in Render Environment settings. Details: {e}"
+                )
+                raise
 
     bot = Bot(
         token=settings.BOT_TOKEN,
