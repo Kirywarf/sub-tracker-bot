@@ -6,9 +6,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
+from collections import Counter
+
+
 def build_expense_pie_chart(
     services_data: List[Dict[str, Any]],
-    currency: str = "RUB",
+    currency: str = "BYN",
 ) -> io.BytesIO:
     """
     Generates a stylish pie chart of subscription expenses.
@@ -19,15 +22,6 @@ def build_expense_pie_chart(
     """
     buf = io.BytesIO()
     fig, ax = plt.subplots(figsize=(8, 6), dpi=120)
-
-    curr_symbols = {
-        "RUB": "₽",
-        "BYN": "Br",
-        "USD": "$",
-        "EUR": "€",
-        "PLN": "zł",
-    }
-    curr_sym = curr_symbols.get(currency.upper().strip(), currency)
 
     try:
         # Background styling
@@ -62,10 +56,16 @@ def build_expense_pie_chart(
             else:
                 plot_items = sorted_data
 
-            def truncate_label(name: str) -> str:
-                return name if len(name) <= 18 else name[:16] + "…"
+            name_counts = Counter(item.get("name", "") for item in plot_items)
 
-            labels = [truncate_label(item["name"]) for item in plot_items]
+            def format_label(item: Dict[str, Any]) -> str:
+                name = item.get("name", "")
+                orig_curr = item.get("original_currency")
+                if name_counts[name] > 1 and orig_curr:
+                    name = f"{name} ({orig_curr})"
+                return name if len(name) <= 20 else name[:18] + "…"
+
+            labels = [format_label(item) for item in plot_items]
             costs = [item["annual_cost"] for item in plot_items]
 
             # Curated modern pastel/vibrant palette
@@ -91,7 +91,7 @@ def build_expense_pie_chart(
                         val_str = f"{val:,.1f}"
                     else:
                         val_str = f"{val:.2f}"
-                    return f"{pct:.1f}%\n({val_str} {curr_sym})"
+                    return f"{pct:.1f}%\n({val_str} {currency})"
                 return my_autopct
 
             wedges, texts, autotexts = ax.pie(
@@ -116,7 +116,7 @@ def build_expense_pie_chart(
                 autotext.set_weight("bold")
 
             ax.set_title(
-                f"Структура годовых расходов ({curr_sym})",
+                f"Структура годовых расходов ({currency})",
                 color="#cdd6f4",
                 fontsize=15,
                 fontweight="bold",

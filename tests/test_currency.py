@@ -49,21 +49,12 @@ def test_convert_currency_fallback_rates():
 def test_detect_default_currency():
     subs = [
         Subscription(service_name="S1", price=10, currency="USD", period_days=30, next_billing_date=date.today(), is_active=True),
-        Subscription(service_name="S2", price=20, currency="BYN", period_days=30, next_billing_date=date.today(), is_active=True),
-        Subscription(service_name="S3", price=30, currency="BYN", period_days=30, next_billing_date=date.today(), is_active=True),
+        Subscription(service_name="S2", price=20, currency="RUB", period_days=30, next_billing_date=date.today(), is_active=True),
     ]
+    # Default base currency is always BYN as requested
     assert detect_default_currency(subs) == "BYN"
+    assert detect_default_currency([]) == "BYN"
 
-    # Inactive subscriptions should not dominate
-    subs_with_inactive = [
-        Subscription(service_name="S1", price=10, currency="USD", period_days=30, next_billing_date=date.today(), is_active=True),
-        Subscription(service_name="S2", price=20, currency="BYN", period_days=30, next_billing_date=date.today(), is_active=False),
-        Subscription(service_name="S3", price=30, currency="BYN", period_days=30, next_billing_date=date.today(), is_active=False),
-    ]
-    assert detect_default_currency(subs_with_inactive) == "USD"
-
-    # Empty subscriptions list
-    assert detect_default_currency([]) == "RUB"
 
 
 @pytest.mark.asyncio

@@ -99,30 +99,12 @@ def convert_currency(
     return amount_in_usd * rate_to
 
 
-def detect_default_currency(subscriptions: List[Any]) -> str:
+DEFAULT_BASE_CURRENCY = "BYN"
+
+
+def detect_default_currency(subscriptions: Optional[List[Any]] = None) -> str:
     """
-    Determines the most sensible default target currency for a user's subscriptions.
-    Prioritizes the most frequently used currency among active subscriptions.
+    Returns the base currency for conversion, which defaults to BYN (Belarusian Rubles).
     """
-    if not subscriptions:
-        return "RUB"
+    return DEFAULT_BASE_CURRENCY
 
-    active_subs = [s for s in subscriptions if getattr(s, "is_active", True)]
-    if not active_subs:
-        return "RUB"
-
-    curr_counts: Dict[str, int] = {}
-    for sub in active_subs:
-        curr = getattr(sub, "currency", "RUB").upper().strip()
-        curr_counts[curr] = curr_counts.get(curr, 0) + 1
-
-    preference_order = ["BYN", "RUB", "USD", "EUR", "PLN"]
-    sorted_currs = sorted(
-        curr_counts.keys(),
-        key=lambda c: (
-            curr_counts[c],
-            -preference_order.index(c) if c in preference_order else -99,
-        ),
-        reverse=True,
-    )
-    return sorted_currs[0]

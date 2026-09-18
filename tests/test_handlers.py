@@ -309,9 +309,10 @@ async def test_analytics_handler(test_session):
     assert "Аналитика регулярных расходов" in caption
     assert "Яндекс Плюс" in caption
     assert "Netflix" in caption
-    assert "RUB" in caption
+    assert "BYN" in caption
     reply_markup = msg.answer_photo.call_args.kwargs["reply_markup"]
     assert reply_markup is not None
+
 
 
 @pytest.mark.asyncio

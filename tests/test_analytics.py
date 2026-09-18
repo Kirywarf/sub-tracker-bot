@@ -142,3 +142,55 @@ def test_calculate_unified_metrics_multi_currency():
     assert "Все расходы приведены к: ₽ (RUB)" in caption
     assert "Топ затратных сервисов" in caption
 
+
+def test_calculate_unified_metrics_with_duplicates_and_byn():
+    from bot.handlers.analytics import calculate_unified_metrics, format_analytics_caption
+
+    subs = [
+        Subscription(
+            id=1,
+            user_id=1,
+            service_name="Spotify",
+            price=15.0,
+            currency="BYN",
+            period_days=30,
+            is_active=True,
+        ),
+        Subscription(
+            id=2,
+            user_id=1,
+            service_name="Яндекс Плюс",
+            price=11.99,
+            currency="BYN",
+            period_days=30,
+            is_active=True,
+        ),
+        Subscription(
+            id=3,
+            user_id=1,
+            service_name="Spotify",
+            price=15.0,
+            currency="PLN",
+            period_days=30,
+            is_active=True,
+        ),
+    ]
+
+    rates = {
+        "USD": 1.0,
+        "BYN": 3.0,
+        "PLN": 3.75,
+    }
+
+    # Default target currency is BYN
+    metrics = calculate_unified_metrics(subs, rates=rates)
+    assert metrics["target_currency"] == "BYN"
+    assert metrics["services_count"] == 3
+
+    caption = format_analytics_caption(metrics)
+    assert "Spotify (BYN)" in caption
+    assert "Spotify (PLN)" in caption
+    assert "Яндекс Плюс" in caption
+    assert "Все расходы приведены к: Br (BYN)" in caption
+
+

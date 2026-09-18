@@ -57,11 +57,11 @@ def calculate_annual_metrics(subscriptions) -> Dict[str, Any]:
 
 def calculate_unified_metrics(
     subscriptions,
-    target_currency: str = "RUB",
+    target_currency: str = "BYN",
     rates: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """
-    Converts all active subscriptions to a single target currency,
+    Converts all active subscriptions to a single target currency (default BYN),
     calculates unified annual/monthly metrics and sorted service rankings.
     """
     target_curr = target_currency.upper().strip()
@@ -124,9 +124,14 @@ def format_analytics_caption(metrics: Dict[str, Any]) -> str:
     target_curr = metrics["target_currency"]
     curr_sym = CURRENCY_DISPLAY.get(target_curr, target_curr)
 
+    if target_curr == "BYN":
+        header_curr = "🇧🇾 <b>Все расходы приведены к: Br (BYN)</b>\n"
+    else:
+        header_curr = f"💱 <b>Все расходы приведены к: {curr_sym} ({target_curr})</b>\n"
+
     text_blocks = [
         "📊 <b>Аналитика регулярных расходов</b>\n",
-        f"💱 <b>Все расходы приведены к: {curr_sym} ({target_curr})</b>\n",
+        header_curr,
         f"• Прогноз на год: <b>{metrics['total_annual']:,.2f} {curr_sym}</b>",
         f"• Средняя нагрузка в месяц: <b>{metrics['monthly_avg']:,.2f} {curr_sym}</b>",
         f"• Активных сервисов: <b>{metrics['services_count']}</b>\n",
@@ -134,27 +139,35 @@ def format_analytics_caption(metrics: Dict[str, Any]) -> str:
 
     if metrics["services_count"] > 0:
         text_blocks.append("🏆 <b>Топ затратных сервисов в год:</b>")
+        from collections import Counter
+        name_counts = Counter(s.get("name", "") for s in metrics.get("services", []))
+
         for idx, s in enumerate(metrics["top_services"], 1):
+            service_title = s['name']
+            if name_counts[s['name']] > 1 and s.get("original_currency"):
+                service_title = f"{s['name']} ({s['original_currency']})"
+
             orig_sym = CURRENCY_DISPLAY.get(s["original_currency"], s["original_currency"])
             if s["is_converted"]:
                 text_blocks.append(
-                    f"  {idx}. <b>{s['name']}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
+                    f"  {idx}. <b>{service_title}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
                     f"({s['original_price']:g} {orig_sym} / {s['period_days']} дн.)"
                 )
             else:
                 text_blocks.append(
-                    f"  {idx}. <b>{s['name']}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
+                    f"  {idx}. <b>{service_title}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
                     f"({s['original_price']:g} {curr_sym} / {s['period_days']} дн.)"
                 )
         text_blocks.append("")
 
     if metrics["has_multiple_currencies"]:
         text_blocks.append(
-            "ℹ️ <i>Подписки в разных валютах пересчитаны по курсу. "
-            "Выберите валюту ниже для переключения:</i>"
+            "ℹ️ <i>Подписки в других валютах пересчитаны по курсу. "
+            "Вы можете переключить валюту кнопками ниже:</i>"
         )
 
     return "\n".join(text_blocks).strip()
+
 
 
 @router.message(Command("analytics"))
