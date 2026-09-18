@@ -5,6 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BASE_DIR = Path(__file__).resolve().parent
 
 
+import re
+
+
 def normalize_db_url(url: str) -> str:
     """Normalizes database URL to ensure compatibility with asyncpg (e.g. Neon, Render)."""
     if not url:
@@ -16,8 +19,18 @@ def normalize_db_url(url: str) -> str:
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
     elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    # Neon adds &channel_binding=require which asyncpg does not support
+    url = re.sub(r"[&?]channel_binding=[^&]+", "", url)
+
+    # asyncpg expects ssl=require rather than sslmode=require
     if "sslmode=require" in url:
         url = url.replace("sslmode=require", "ssl=require")
+
+    # If removing query params left an orphan & at the start of query
+    if "?" not in url and "&" in url:
+        url = url.replace("&", "?", 1)
+
     return url
 
 
