@@ -15,6 +15,7 @@ CURRENCY_DISPLAY = {
     "BYN": "Br",
     "USD": "$",
     "EUR": "€",
+    "PLN": "zł",
 }
 
 

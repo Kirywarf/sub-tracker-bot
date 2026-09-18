@@ -7,6 +7,7 @@ CURRENCY_LABELS = {
     "BYN": "🇧🇾 BYN (Br)",
     "USD": "🇺🇸 USD ($)",
     "EUR": "🇪🇺 EUR (€)",
+    "PLN": "🇵🇱 PLN (zł)",
 }
 
 
@@ -19,6 +20,9 @@ def get_currency_keyboard() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="🇺🇸 USD ($)", callback_data="curr_USD"),
             InlineKeyboardButton(text="🇪🇺 EUR (€)", callback_data="curr_EUR"),
+        ],
+        [
+            InlineKeyboardButton(text="🇵🇱 PLN (zł)", callback_data="curr_PLN"),
         ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -44,7 +48,8 @@ def get_subscriptions_list_keyboard(subscriptions: List[Subscription]) -> Inline
     buttons = []
     for sub in subscriptions:
         status_icon = "🟢" if sub.is_active else "⏸"
-        currency_disp = "Br" if sub.currency == "BYN" else ("₽" if sub.currency == "RUB" else sub.currency)
+        currency_map = {"BYN": "Br", "RUB": "₽", "USD": "$", "EUR": "€", "PLN": "zł"}
+        currency_disp = currency_map.get(sub.currency, sub.currency)
         price_disp = f"{sub.price:g}" if sub.price.is_integer() else f"{sub.price:.2f}"
         btn_text = f"{status_icon} {sub.service_name} • {price_disp} {currency_disp}"
         buttons.append([InlineKeyboardButton(text=btn_text, callback_data=f"view_sub_{sub.id}")])
@@ -115,6 +120,9 @@ def get_edit_currency_keyboard(sub_id: int) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="🇺🇸 USD ($)", callback_data=f"set_curr_{sub_id}_USD"),
             InlineKeyboardButton(text="🇪🇺 EUR (€)", callback_data=f"set_curr_{sub_id}_EUR"),
+        ],
+        [
+            InlineKeyboardButton(text="🇵🇱 PLN (zł)", callback_data=f"set_curr_{sub_id}_PLN"),
         ],
         [
             InlineKeyboardButton(text="⬅️ Отмена", callback_data=f"view_sub_{sub_id}"),

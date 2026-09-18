@@ -18,6 +18,7 @@ CURRENCY_SYMBOLS = {
     "BYN": "Br",
     "USD": "$",
     "EUR": "€",
+    "PLN": "zł",
 }
 
 
