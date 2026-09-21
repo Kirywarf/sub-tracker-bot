@@ -49,28 +49,29 @@ CURRENCY_DISPLAY = {
 def format_sub_card(sub) -> str:
     curr = CURRENCY_DISPLAY.get(sub.currency, sub.currency)
     price_str = f"{sub.price:g}" if sub.price.is_integer() else f"{sub.price:.2f}"
-    status_str = "🟢 Активна" if sub.is_active else "⏸ Приостановлена"
+    status_str = "● Активна" if sub.is_active else "○ Приостановлена"
 
     today = date.today()
     days_left = (sub.next_billing_date - today).days
     if days_left > 0:
         days_str = f"через {days_left} дн."
     elif days_left == 0:
-        days_str = "сегодня!"
+        days_str = "сегодня"
     else:
         days_str = f"просрочено на {-days_left} дн."
 
     date_formatted = sub.next_billing_date.strftime("%d.%m.%Y")
 
     card = (
-        f"💳 <b>Подписка: {sub.service_name}</b>\n\n"
+        f" <b>Подписка: {sub.service_name}</b>\n"
+        f"────────────────────────\n"
         f"• <b>Стоимость:</b> {price_str} {curr} ({sub.currency})\n"
         f"• <b>Периодичность:</b> каждые {sub.period_days} дн.\n"
         f"• <b>Следующее списание:</b> {date_formatted} (<i>{days_str}</i>)\n"
         f"• <b>Статус:</b> {status_str}\n"
     )
     if sub.cancel_url:
-        card += f"• <b>Ссылка отмены:</b> <a href=\"{sub.cancel_url}\">Перейти</a>\n"
+        card += f"• <b>Ссылка отмены:</b> <a href=\"{sub.cancel_url}\">Перейти к сервису</a>\n"
     return card
 
 

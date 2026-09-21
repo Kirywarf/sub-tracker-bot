@@ -49,7 +49,8 @@ async def check_and_send_reminders(bot: Bot, session_factory: async_sessionmaker
         price_display = f"{sub.price:g} {curr_symbol}" if sub.price.is_integer() else f"{sub.price:.2f} {curr_symbol}"
 
         text = (
-            "⚠️ <b>Напоминание о списании!</b>\n\n"
+            " <b>Напоминание о списании!</b>\n"
+            "────────────────────────\n"
             f"Завтра спишется <b>{price_display}</b> за сервис <b>{sub.service_name}</b>."
         )
 

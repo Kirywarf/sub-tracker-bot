@@ -119,26 +119,26 @@ def calculate_unified_metrics(
 
 def format_analytics_caption(metrics: Dict[str, Any]) -> str:
     """
-    Generates a readable HTML report caption for the analytics photo.
+    Generates an Apple Card-style readable HTML report caption for the analytics photo.
     """
     target_curr = metrics["target_currency"]
     curr_sym = CURRENCY_DISPLAY.get(target_curr, target_curr)
 
     if target_curr == "BYN":
-        header_curr = "🇧🇾 <b>Все расходы приведены к: Br (BYN)</b>\n"
+        header_curr = "Все расходы приведены к: Br (BYN)"
     else:
-        header_curr = f"💱 <b>Все расходы приведены к: {curr_sym} ({target_curr})</b>\n"
+        header_curr = f"Все расходы приведены к: {curr_sym} ({target_curr})"
 
     text_blocks = [
-        "📊 <b>Аналитика регулярных расходов</b>\n",
-        header_curr,
+        " <b>Аналитика регулярных расходов</b>",
+        f"<i>{header_curr}</i>\n",
         f"• Прогноз на год: <b>{metrics['total_annual']:,.2f} {curr_sym}</b>",
         f"• Средняя нагрузка в месяц: <b>{metrics['monthly_avg']:,.2f} {curr_sym}</b>",
         f"• Активных сервисов: <b>{metrics['services_count']}</b>\n",
     ]
 
     if metrics["services_count"] > 0:
-        text_blocks.append("🏆 <b>Топ затратных сервисов в год:</b>")
+        text_blocks.append("<b>Топ затратных сервисов в год:</b>")
         from collections import Counter
         name_counts = Counter(s.get("name", "") for s in metrics.get("services", []))
 
@@ -162,7 +162,7 @@ def format_analytics_caption(metrics: Dict[str, Any]) -> str:
 
     if metrics["has_multiple_currencies"]:
         text_blocks.append(
-            "ℹ️ <i>Подписки в других валютах пересчитаны по курсу. "
+            "<i>Подписки в других валютах пересчитаны по курсу. "
             "Вы можете переключить валюту кнопками ниже:</i>"
         )
 
