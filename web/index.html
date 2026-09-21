@@ -235,6 +235,35 @@
     .dock-pill {
       transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
+    /* Monthly Calendar Tooltip (Isolated Single Column Hover) */
+    .bar-col {
+      position: relative;
+    }
+    .bar-col .bar-tooltip {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      opacity: 0;
+      pointer-events: none;
+      background-color: #1c1c1e;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+      white-space: nowrap;
+      z-index: 30;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .bar-col:hover .bar-tooltip,
+    .bar-col.active-bar .bar-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 
@@ -294,7 +323,7 @@
     <section id="view-analytics" class="space-y-4">
 
       <!-- Apple Card Donut Overview Widget -->
-      <div class="glass-card p-6 text-center relative group">
+      <div class="glass-card p-6 text-center relative">
         <div class="card-glare"></div>
 
         <div class="relative z-10">
@@ -337,7 +366,7 @@
       </div>
 
       <!-- Monthly Spend Bar Chart -->
-      <div class="glass-card p-5 relative group">
+      <div class="glass-card p-5 relative">
         <div class="card-glare"></div>
         <div class="relative z-10">
           <div class="flex items-center justify-between mb-3">
@@ -1088,7 +1117,7 @@
         const heightPct = maxVal > 0 ? Math.max(14, Math.round((val / maxVal) * 86)) : 12;
 
         const col = document.createElement('div');
-        col.className = 'flex-1 h-full flex items-end justify-center group relative cursor-pointer';
+        col.className = 'bar-col flex-1 h-full flex items-end justify-center cursor-pointer';
         
         const barColor = isCurrent
           ? 'bg-[#0071e3] shadow-[0_0_12px_rgba(0,113,227,0.5)]'
@@ -1096,13 +1125,27 @@
 
         col.innerHTML = `
           <div class="w-full ${barColor} rounded-full transition-all duration-300" style="height: ${heightPct}%"></div>
-          <div class="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1c1c1e] text-white text-[10px] font-medium px-2 py-0.5 rounded-lg border border-white/15 pointer-events-none whitespace-nowrap z-20 shadow-md">
+          <div class="bar-tooltip">
             ${fmt(val)} ${sym}
           </div>
         `;
 
+        col.addEventListener('mouseenter', () => {
+          if (titleEl) {
+            titleEl.innerText = `${MONTH_FULL_NAMES[m]}: ${fmt(val)} ${sym}`;
+          }
+        });
+
+        col.addEventListener('mouseleave', () => {
+          if (titleEl) {
+            titleEl.innerText = `В этом месяце: ${fmt(currentMonthVal)} ${sym}`;
+          }
+        });
+
         col.addEventListener('click', () => {
           AudioFX.click();
+          document.querySelectorAll('.bar-col').forEach(c => c.classList.remove('active-bar'));
+          col.classList.add('active-bar');
           if (titleEl) {
             titleEl.innerText = `${MONTH_FULL_NAMES[m]}: ${fmt(val)} ${sym}`;
           }
