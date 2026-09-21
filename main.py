@@ -51,22 +51,25 @@ async def api_get_subscriptions(request: web.Request) -> web.Response:
     user_id_param = request.query.get("user_id")
     target_curr = request.query.get("currency", "RUB").upper().strip()
 
-    try:
-        user_id = int(user_id_param) if user_id_param else 100001
-    except ValueError:
-        user_id = 100001
+    user_id = None
+    if user_id_param:
+        try:
+            user_id = int(user_id_param)
+        except ValueError:
+            pass
 
     async with async_session_factory() as session:
-        subs = await get_user_subscriptions(session, user_id=user_id)
-        if not subs and user_id == 100001:
-            from datetime import timedelta
-            today = date.today()
-            await get_or_create_user(session, telegram_id=100001, username="User")
-            await add_subscription(session, 100001, "Яндекс Плюс", 299.0, "RUB", 30, today + timedelta(days=14), "https://plus.yandex.ru")
-            await add_subscription(session, 100001, "Telegram Premium", 399.0, "RUB", 30, today + timedelta(days=21), "https://telegram.org")
-            await add_subscription(session, 100001, "Spotify", 19.99, "PLN", 30, today + timedelta(days=28), "https://spotify.com/account")
-            subs = await get_user_subscriptions(session, user_id=100001)
+        if not user_id:
+            from database.models import User
+            from sqlalchemy import select
+            stmt = select(User.telegram_id).order_by(User.created_at.desc()).limit(1)
+            res = await session.execute(stmt)
+            user_id = res.scalar_one_or_none()
 
+        if not user_id:
+            user_id = 925951839
+
+        subs = await get_user_subscriptions(session, user_id=user_id)
         rates = await get_exchange_rates()
         metrics = calculate_unified_metrics(subs, target_currency=target_curr, rates=rates)
         subs_list = [
@@ -100,23 +103,42 @@ async def api_create_subscription(request: web.Request) -> web.Response:
     try:
         data = await request.json()
         user_id = int(data.get("user_id", 0))
-        if not user_id:
-            return web.json_response({"status": "error", "message": "user_id is required"}, status=400)
 
-        billing_date = date.fromisoformat(data["next_billing_date"])
+        raw_date = str(data["next_billing_date"]).strip()
+        if "." in raw_date:
+            parts = raw_date.split(".")
+            if len(parts) == 3:
+                billing_date = date(int(parts[2]), int(parts[1]), int(parts[0]))
+            elif len(parts) == 2:
+                billing_date = date(date.today().year, int(parts[1]), int(parts[0]))
+            else:
+                billing_date = date.fromisoformat(raw_date)
+        else:
+            billing_date = date.fromisoformat(raw_date)
+
+        raw_price = str(data["price"]).replace(",", ".").strip()
+        price = float(raw_price)
+
         async with async_session_factory() as session:
+            if not user_id:
+                from database.models import User
+                from sqlalchemy import select
+                stmt = select(User.telegram_id).order_by(User.created_at.desc()).limit(1)
+                res = await session.execute(stmt)
+                user_id = res.scalar_one_or_none() or 925951839
+
             await get_or_create_user(session, telegram_id=user_id, username=data.get("username"))
             sub = await add_subscription(
                 session=session,
                 user_id=user_id,
-                service_name=data["service_name"],
-                price=float(data["price"]),
+                service_name=str(data["service_name"]).strip(),
+                price=price,
                 currency=data.get("currency", "RUB").upper().strip(),
                 period_days=int(data.get("period_days", 30)),
                 next_billing_date=billing_date,
                 cancel_url=data.get("cancel_url") or None,
             )
-            return web.json_response({"status": "ok", "sub_id": sub.id})
+            return web.json_response({"status": "ok", "sub_id": sub.id, "user_id": user_id})
     except Exception as e:
         logger.error(f"Error creating subscription via API: {e}")
         return web.json_response({"status": "error", "message": str(e)}, status=400)

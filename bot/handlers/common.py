@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from bot.keyboards.reply import get_main_menu_keyboard
 from bot.utils.cleaner import send_clean_message
+from config import settings
 
 router = Router(name="common")
 
@@ -24,6 +25,23 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         "• <b>4 валюты</b> — BYN · RUB · USD · PLN\n\n"
         "Выберите действие:"
     )
+
+    webapp_url = getattr(settings, "WEBAPP_URL", "")
+    if webapp_url and user_id and getattr(message, "bot", None):
+        try:
+            from urllib.parse import quote
+            from aiogram.types import MenuButtonWebApp, WebAppInfo
+            target_url = f"{webapp_url.rstrip('/')}?user_id={user_id}&name={quote(first_name)}"
+            await message.bot.set_chat_menu_button(
+                chat_id=message.chat.id,
+                menu_button=MenuButtonWebApp(
+                    text="StopPay ",
+                    web_app=WebAppInfo(url=target_url),
+                ),
+            )
+        except Exception:
+            pass
+
     await send_clean_message(message, welcome_text, reply_markup=get_main_menu_keyboard(user_id=user_id))
 
 

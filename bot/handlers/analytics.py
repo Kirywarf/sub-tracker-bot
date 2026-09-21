@@ -187,7 +187,7 @@ async def show_analytics(message: Message, session: AsyncSession) -> None:
     input_file = BufferedInputFile(chart_bytes, filename="analytics.png")
 
     caption_text = format_analytics_caption(metrics)
-    reply_markup = get_analytics_currency_keyboard(target_curr)
+    reply_markup = get_analytics_currency_keyboard(target_curr, user_id=message.from_user.id)
 
     await send_clean_photo(
         message,
@@ -215,7 +215,7 @@ async def cb_switch_analytics_currency(callback: CallbackQuery, session: AsyncSe
     input_file = BufferedInputFile(chart_bytes, filename="analytics.png")
 
     caption_text = format_analytics_caption(metrics)
-    reply_markup = get_analytics_currency_keyboard(target_curr)
+    reply_markup = get_analytics_currency_keyboard(target_curr, user_id=callback.from_user.id)
 
     media = InputMediaPhoto(media=input_file, caption=caption_text, parse_mode="HTML")
     try:

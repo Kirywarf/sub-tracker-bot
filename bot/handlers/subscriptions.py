@@ -294,7 +294,7 @@ async def show_subscriptions_list(
             message,
             "У вас пока нет добавленных подписок.\n\n"
             "Нажмите кнопку ниже, чтобы добавить первую:",
-            reply_markup=get_subscriptions_list_keyboard([]),
+            reply_markup=get_subscriptions_list_keyboard([], user_id=message.from_user.id),
         )
         return
 
@@ -303,7 +303,7 @@ async def show_subscriptions_list(
         f"📋 <b>Ваши подписки ({len(subs)}):</b>\n\n"
         "Нажмите на сервис для управления:",
         parse_mode="HTML",
-        reply_markup=get_subscriptions_list_keyboard(subs),
+        reply_markup=get_subscriptions_list_keyboard(subs, user_id=message.from_user.id),
     )
 
 
@@ -317,7 +317,7 @@ async def cb_list_subscriptions(
     if not subs:
         await callback.message.edit_text(
             "У вас пока нет добавленных подписок.",
-            reply_markup=get_subscriptions_list_keyboard([]),
+            reply_markup=get_subscriptions_list_keyboard([], user_id=callback.from_user.id),
         )
         return
 
@@ -325,7 +325,7 @@ async def cb_list_subscriptions(
         f"📋 <b>Ваши подписки ({len(subs)}):</b>\n\n"
         "Нажмите на сервис, чтобы просмотреть подробности или отредактировать:",
         parse_mode="HTML",
-        reply_markup=get_subscriptions_list_keyboard(subs),
+        reply_markup=get_subscriptions_list_keyboard(subs, user_id=callback.from_user.id),
     )
 
 
