@@ -50,8 +50,7 @@ async def check_and_send_reminders(bot: Bot, session_factory: async_sessionmaker
 
         text = (
             " <b>Напоминание о списании!</b>\n"
-            "────────────────────────\n"
-            f"Завтра спишется <b>{price_display}</b> за сервис <b>{sub.service_name}</b>."
+            f"Завтра: <b>{price_display}</b> · <b>{sub.service_name}</b>"
         )
 
         kb = build_reminder_keyboard(sub.id, sub.cancel_url)

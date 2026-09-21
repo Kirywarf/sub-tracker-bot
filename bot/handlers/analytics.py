@@ -132,13 +132,13 @@ def format_analytics_caption(metrics: Dict[str, Any]) -> str:
     text_blocks = [
         " <b>Аналитика регулярных расходов</b>",
         f"<i>{header_curr}</i>\n",
-        f"• Прогноз на год: <b>{metrics['total_annual']:,.2f} {curr_sym}</b>",
-        f"• Средняя нагрузка в месяц: <b>{metrics['monthly_avg']:,.2f} {curr_sym}</b>",
-        f"• Активных сервисов: <b>{metrics['services_count']}</b>\n",
+        f"• В год: <b>{metrics['total_annual']:,.0f} {curr_sym}</b>",
+        f"• В месяц: <b>{metrics['monthly_avg']:,.0f} {curr_sym}</b>",
+        f"• Подписок: <b>{metrics['services_count']}</b>\n",
     ]
 
     if metrics["services_count"] > 0:
-        text_blocks.append("<b>Топ затратных сервисов в год:</b>")
+        text_blocks.append("<b>Топ затратных сервисов:</b>")
         from collections import Counter
         name_counts = Counter(s.get("name", "") for s in metrics.get("services", []))
 
@@ -147,27 +147,19 @@ def format_analytics_caption(metrics: Dict[str, Any]) -> str:
             if name_counts[s['name']] > 1 and s.get("original_currency"):
                 service_title = f"{s['name']} ({s['original_currency']})"
 
-            orig_sym = CURRENCY_DISPLAY.get(s["original_currency"], s["original_currency"])
-            if s["is_converted"]:
-                text_blocks.append(
-                    f"  {idx}. <b>{service_title}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
-                    f"({s['original_price']:g} {orig_sym} / {s['period_days']} дн.)"
-                )
-            else:
-                text_blocks.append(
-                    f"  {idx}. <b>{service_title}</b> — {s['annual_cost']:,.0f} {curr_sym}/год "
-                    f"({s['original_price']:g} {curr_sym} / {s['period_days']} дн.)"
-                )
+            text_blocks.append(
+                f"{idx}. <b>{service_title}</b> — {s['annual_cost']:,.0f} {curr_sym}/год"
+            )
         text_blocks.append("")
 
     if metrics["has_multiple_currencies"]:
-        text_blocks.append(
-            "<i>Подписки в других валютах пересчитаны по курсу. "
-            "Вы можете переключить валюту кнопками ниже:</i>"
-        )
+        text_blocks.append("<i>Валюту можно переключить ниже:</i>")
 
     return "\n".join(text_blocks).strip()
 
+
+
+from bot.utils.cleaner import send_clean_message, send_clean_photo
 
 
 @router.message(Command("analytics"))
@@ -176,10 +168,11 @@ async def show_analytics(message: Message, session: AsyncSession) -> None:
     subs = await get_user_subscriptions(session, message.from_user.id, active_only=True)
 
     if not subs:
-        await message.answer(
-            "📊 <b>Аналитика расходов</b>\n\n"
-            "У вас пока нет активных подписок для анализа.\n"
-            "Добавьте подписки через меню «➕ Добавить подписку», и здесь появится полный прогноз расходов с диаграммой!",
+        await send_clean_message(
+            message,
+            " <b>Аналитика расходов</b>\n\n"
+            "У вас пока нет активных подписок.\n"
+            "Добавьте подписку, и здесь появится аналитика.",
             parse_mode="HTML",
         )
         return
@@ -196,7 +189,8 @@ async def show_analytics(message: Message, session: AsyncSession) -> None:
     caption_text = format_analytics_caption(metrics)
     reply_markup = get_analytics_currency_keyboard(target_curr)
 
-    await message.answer_photo(
+    await send_clean_photo(
+        message,
         photo=input_file,
         caption=caption_text,
         reply_markup=reply_markup,

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.states.subscription_states import AddSubscriptionStates, EditSubscriptionStates
 from bot.keyboards.reply import get_main_menu_keyboard, get_cancel_keyboard
+from bot.utils.cleaner import send_clean_message
 from bot.keyboards.inline import (
     get_currency_keyboard,
     get_period_keyboard,
@@ -49,7 +50,7 @@ CURRENCY_DISPLAY = {
 def format_sub_card(sub) -> str:
     curr = CURRENCY_DISPLAY.get(sub.currency, sub.currency)
     price_str = f"{sub.price:g}" if sub.price.is_integer() else f"{sub.price:.2f}"
-    status_str = "● Активна" if sub.is_active else "○ Приостановлена"
+    status_str = "● Активна" if sub.is_active else "○ На паузе"
 
     today = date.today()
     days_left = (sub.next_billing_date - today).days
@@ -63,15 +64,13 @@ def format_sub_card(sub) -> str:
     date_formatted = sub.next_billing_date.strftime("%d.%m.%Y")
 
     card = (
-        f" <b>Подписка: {sub.service_name}</b>\n"
-        f"────────────────────────\n"
-        f"• <b>Стоимость:</b> {price_str} {curr} ({sub.currency})\n"
-        f"• <b>Периодичность:</b> каждые {sub.period_days} дн.\n"
-        f"• <b>Следующее списание:</b> {date_formatted} (<i>{days_str}</i>)\n"
-        f"• <b>Статус:</b> {status_str}\n"
+        f" <b>{sub.service_name}</b> · {status_str}\n"
+        f"────────────────────\n"
+        f"• Сумма: <b>{price_str} {curr}</b> / {sub.period_days} дн.\n"
+        f"• Списание: <b>{date_formatted}</b> ({days_str})\n"
     )
     if sub.cancel_url:
-        card += f"• <b>Ссылка отмены:</b> <a href=\"{sub.cancel_url}\">Перейти к сервису</a>\n"
+        card += f"• Ссылка: <a href=\"{sub.cancel_url}\">Отменить подписку</a>\n"
     return card
 
 
@@ -82,8 +81,9 @@ def format_sub_card(sub) -> str:
 async def start_add_subscription(message: Message, state: FSMContext) -> None:
     await state.clear()
     await state.set_state(AddSubscriptionStates.service_name)
-    await message.answer(
-        "📝 Шаг 1/5: Введите <b>название сервиса</b>\n(например, <i>Яндекс Плюс</i>, <i>YouTube Premium</i>, <i>Spotify</i>):",
+    await send_clean_message(
+        message,
+        "Шаг 1/5: Введите <b>название сервиса</b>\n(например, <i>Яндекс</i> или <i>Netflix</i>):",
         parse_mode="HTML",
         reply_markup=get_cancel_keyboard(),
     )
@@ -94,10 +94,12 @@ async def cb_add_new_sub(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     await state.clear()
     await state.set_state(AddSubscriptionStates.service_name)
-    await callback.message.answer(
-        "📝 Шаг 1/5: Введите <b>название сервиса</b>\n(например, <i>Яндекс Плюс</i>, <i>YouTube Premium</i>, <i>Spotify</i>):",
+    await send_clean_message(
+        callback.message,
+        "Шаг 1/5: Введите <b>название сервиса</b>\n(например, <i>Яндекс</i> или <i>Netflix</i>):",
         parse_mode="HTML",
         reply_markup=get_cancel_keyboard(),
+        delete_trigger=False,
     )
 
 
@@ -105,13 +107,14 @@ async def cb_add_new_sub(callback: CallbackQuery, state: FSMContext) -> None:
 async def process_service_name(message: Message, state: FSMContext) -> None:
     is_valid, name, error = validate_service_name(message.text)
     if not is_valid:
-        await message.answer(f"⚠️ {error}", parse_mode="HTML")
+        await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
 
     await state.update_data(service_name=name)
     await state.set_state(AddSubscriptionStates.price)
-    await message.answer(
-        f"💰 Шаг 2/5: Введите <b>стоимость списания</b> для <b>{name}</b>\n(например: <code>299</code> или <code>14.99</code>):",
+    await send_clean_message(
+        message,
+        f"Шаг 2/5: Введите <b>сумму списания</b> для <b>{name}</b>\n(например: <code>299</code>):",
         parse_mode="HTML",
     )
 
@@ -120,13 +123,14 @@ async def process_service_name(message: Message, state: FSMContext) -> None:
 async def process_price(message: Message, state: FSMContext) -> None:
     is_valid, price, error = validate_price(message.text)
     if not is_valid:
-        await message.answer(f"⚠️ {error}", parse_mode="HTML")
+        await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
 
     await state.update_data(price=price)
     await state.set_state(AddSubscriptionStates.currency)
-    await message.answer(
-        f"💱 Выберите <b>валюту</b> списания:",
+    await send_clean_message(
+        message,
+        f"Шаг 3/5: Выберите <b>валюту</b> списания:",
         parse_mode="HTML",
         reply_markup=get_currency_keyboard(),
     )
@@ -141,8 +145,8 @@ async def process_currency_selection(callback: CallbackQuery, state: FSMContext)
 
     curr_symbol = CURRENCY_DISPLAY.get(currency, currency)
     await callback.message.edit_text(
-        f"Валюта выбрана: <b>{curr_symbol} ({currency})</b>\n\n"
-        "⏱ Шаг 3/5: Выберите <b>периодичность списания</b>:",
+        f"Валюта: <b>{curr_symbol} ({currency})</b>\n\n"
+        "Шаг 3/5: Выберите <b>периодичность</b>:",
         parse_mode="HTML",
         reply_markup=get_period_keyboard(),
     )
@@ -155,8 +159,8 @@ async def process_period_selection(callback: CallbackQuery, state: FSMContext) -
 
     if period_type == "custom":
         await state.set_state(AddSubscriptionStates.custom_period)
-        await callback.message.answer(
-            "Введите количество дней между списаниями целым числом (например, <code>14</code> или <code>90</code>):",
+        await callback.message.edit_text(
+            "Введите количество дней (например, <code>14</code>):",
             parse_mode="HTML",
         )
         return
@@ -165,9 +169,8 @@ async def process_period_selection(callback: CallbackQuery, state: FSMContext) -
     await state.update_data(period_days=period_days)
     await state.set_state(AddSubscriptionStates.billing_date)
     await callback.message.edit_text(
-        f"Периодичность: <b>{period_days} дн.</b>\n\n"
-        "📅 Шаг 4/5: Введите <b>дату ближайшего списания</b> в формате <code>ДД.ММ.ГГГГ</code>\n"
-        "(например: <code>25.10.2026</code>):",
+        f"Период: <b>{period_days} дн.</b>\n\n"
+        "Шаг 4/5: Введите <b>дату списания</b> (<code>ДД.ММ.ГГГГ</code>):",
         parse_mode="HTML",
     )
 
@@ -176,15 +179,15 @@ async def process_period_selection(callback: CallbackQuery, state: FSMContext) -
 async def process_custom_period(message: Message, state: FSMContext) -> None:
     is_valid, days, error = validate_period_days(message.text)
     if not is_valid:
-        await message.answer(f"⚠️ {error}", parse_mode="HTML")
+        await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
 
     await state.update_data(period_days=days)
     await state.set_state(AddSubscriptionStates.billing_date)
-    await message.answer(
-        f"Интервал сохранен: <b>{days} дн.</b>\n\n"
-        "📅 Шаг 4/5: Введите <b>дату ближайшего списания</b> в формате <code>ДД.ММ.ГГГГ</code>\n"
-        "(например: <code>25.10.2026</code>):",
+    await send_clean_message(
+        message,
+        f"Период: <b>{days} дн.</b>\n\n"
+        "Шаг 4/5: Введите <b>дату списания</b> (<code>ДД.ММ.ГГГГ</code>):",
         parse_mode="HTML",
     )
 
@@ -193,15 +196,15 @@ async def process_custom_period(message: Message, state: FSMContext) -> None:
 async def process_billing_date(message: Message, state: FSMContext) -> None:
     is_valid, parsed_date, error = validate_billing_date(message.text)
     if not is_valid:
-        await message.answer(f"⚠️ {error}", parse_mode="HTML")
+        await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
 
     await state.update_data(next_billing_date=parsed_date)
     await state.set_state(AddSubscriptionStates.cancel_url)
-    await message.answer(
+    await send_clean_message(
+        message,
         f"Дата списания: <b>{parsed_date.strftime('%d.%m.%Y')}</b>\n\n"
-        "🔗 Шаг 5/5: Отправьте <b>ссылку на страницу отмены подписки</b> (например, <code>https://plus.yandex.ru</code>)\n"
-        "или нажмите кнопку «Пропустить», если ссылки нет:",
+        "Шаг 5/5: Отправьте <b>ссылку на отмену</b> или пропустите:",
         parse_mode="HTML",
         reply_markup=get_skip_cancel_url_keyboard(),
     )
@@ -228,10 +231,12 @@ async def process_skip_cancel_url(
         cancel_url=None,
     )
 
-    await callback.message.answer(
+    await send_clean_message(
+        callback.message,
         "🎉 <b>Подписка успешно сохранена!</b>\n\n" + format_sub_card(sub),
         parse_mode="HTML",
         reply_markup=get_main_menu_keyboard(),
+        delete_trigger=False,
     )
 
 
@@ -243,10 +248,12 @@ async def process_cancel_url(
 ) -> None:
     is_valid, clean_url, error = validate_cancel_url(message.text)
     if not is_valid:
-        await message.answer(
+        await send_clean_message(
+            message,
             f"⚠️ {error}\n\nЕсли хотите пропустить этот шаг, нажмите кнопку ниже:",
             parse_mode="HTML",
             reply_markup=get_skip_cancel_url_keyboard(),
+            clean_previous=False,
         )
         return
 
@@ -264,7 +271,8 @@ async def process_cancel_url(
         cancel_url=clean_url,
     )
 
-    await message.answer(
+    await send_clean_message(
+        message,
         "🎉 <b>Подписка успешно сохранена!</b>\n\n" + format_sub_card(sub),
         parse_mode="HTML",
         reply_markup=get_main_menu_keyboard(),
@@ -282,16 +290,18 @@ async def show_subscriptions_list(
 ) -> None:
     subs = await get_user_subscriptions(session, message.from_user.id)
     if not subs:
-        await message.answer(
+        await send_clean_message(
+            message,
             "У вас пока нет добавленных подписок.\n\n"
-            "Нажмите кнопку ниже, чтобы добавить первую!",
+            "Нажмите кнопку ниже, чтобы добавить первую:",
             reply_markup=get_subscriptions_list_keyboard([]),
         )
         return
 
-    await message.answer(
+    await send_clean_message(
+        message,
         f"📋 <b>Ваши подписки ({len(subs)}):</b>\n\n"
-        "Нажмите на сервис, чтобы просмотреть подробности или отредактировать:",
+        "Нажмите на сервис для управления:",
         parse_mode="HTML",
         reply_markup=get_subscriptions_list_keyboard(subs),
     )
@@ -530,9 +540,9 @@ async def process_edit_value(
 
     await state.clear()
     updated_sub = await update_subscription(session, sub_id, **update_kwargs)
-    await message.answer("✅ <b>Изменения успешно сохранены!</b>", parse_mode="HTML", reply_markup=get_main_menu_keyboard())
-    await message.answer(
-        format_sub_card(updated_sub),
+    await send_clean_message(
+        message,
+        "✅ <b>Изменения сохранены!</b>\n\n" + format_sub_card(updated_sub),
         parse_mode="HTML",
         reply_markup=get_subscription_card_keyboard(updated_sub.id, updated_sub.is_active, updated_sub.cancel_url),
     )

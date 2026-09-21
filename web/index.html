@@ -3,286 +3,206 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StopPay — Все подписки под абсолютным контролем</title>
+  <title>StopPay — Подписки под контролем</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
       background-color: #000000;
       color: #f5f5f7;
       -webkit-font-smoothing: antialiased;
     }
     .apple-glass {
-      background: rgba(22, 22, 24, 0.75);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(18, 18, 20, 0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .apple-card {
-      background: #121214;
+      background: #111113;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.25s ease;
     }
     .apple-card:hover {
-      border-color: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.18);
     }
-    .apple-gradient-text {
-      background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.65) 100%);
+    .apple-title {
+      background: linear-gradient(180deg, #ffffff 15%, rgba(255, 255, 255, 0.6) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .apple-blue-glow {
-      box-shadow: 0 0 50px -10px rgba(41, 151, 255, 0.35);
-    }
-    /* Hide scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #000000;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #2c2c2e;
-      border-radius: 3px;
-    }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #000000; }
+    ::-webkit-scrollbar-thumb { background: #262629; border-radius: 3px; }
   </style>
 </head>
 <body class="bg-black text-[#f5f5f7] selection:bg-[#2997ff] selection:text-white">
 
-  <!-- Apple Navigation Bar -->
-  <nav class="fixed top-0 left-0 right-0 z-50 apple-glass border-b border-white/[0.08]">
-    <div class="max-w-6xl mx-auto px-6 h-12 flex items-center justify-between text-xs tracking-tight">
-      <div class="flex items-center space-x-6">
-        <a href="#" class="flex items-center space-x-2 text-white hover:opacity-80 transition">
-          <span class="text-base font-semibold"></span>
-          <span class="font-semibold text-sm tracking-tight">StopPay</span>
+  <!-- Navbar -->
+  <nav class="fixed top-0 inset-x-0 z-50 apple-glass">
+    <div class="max-w-5xl mx-auto px-6 h-12 flex items-center justify-between text-xs">
+      <div class="flex items-center space-x-8">
+        <a href="#" class="flex items-center space-x-2 text-white font-semibold">
+          <span class="text-base"></span>
+          <span class="tracking-tight text-sm">StopPay</span>
         </a>
-        <div class="hidden md:flex items-center space-x-6 text-[#86868b]">
-          <a href="#overview" class="hover:text-white transition">Обзор</a>
+        <div class="hidden sm:flex items-center space-x-6 text-[#86868b]">
           <a href="#features" class="hover:text-white transition">Возможности</a>
-          <a href="#demo" class="hover:text-white transition">Интерфейс</a>
+          <a href="#demo" class="hover:text-white transition">Демо</a>
           <a href="#calculator" class="hover:text-white transition">Калькулятор</a>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
-        <a href="https://t.me/" target="_blank" class="bg-[#0071e3] hover:bg-[#0077ed] text-white px-3.5 py-1 rounded-full font-medium transition text-xs flex items-center space-x-1">
-          <span>Запустить бота</span>
-          <span>↗</span>
-        </a>
-      </div>
+      <a href="https://t.me/" target="_blank" class="bg-[#0071e3] hover:bg-[#0077ed] text-white px-3.5 py-1 rounded-full font-medium transition text-xs flex items-center space-x-1">
+        <span>Открыть в Telegram</span>
+        <span>↗</span>
+      </a>
     </div>
   </nav>
 
-  <!-- Hero Section -->
-  <section id="overview" class="relative pt-32 pb-24 overflow-hidden text-center">
-    <!-- Ambient radial glow behind hero -->
-    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-[#2997ff]/20 via-[#bf5af2]/15 to-transparent rounded-full blur-[110px] pointer-events-none"></div>
+  <!-- Hero Section (Minimalist & High Impact) -->
+  <section class="relative pt-36 pb-20 text-center overflow-hidden">
+    <!-- Ambient glow -->
+    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-gradient-to-tr from-[#2997ff]/20 to-[#bf5af2]/15 rounded-full blur-[100px] pointer-events-none"></div>
 
-    <div class="max-w-4xl mx-auto px-6 relative z-10">
-      <div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#1c1c1e] border border-white/10 text-[#86868b] text-xs font-medium mb-6">
+    <div class="max-w-3xl mx-auto px-6 relative z-10">
+      <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#1c1c1e] text-[#86868b] text-xs font-medium mb-6">
         <span class="w-1.5 h-1.5 rounded-full bg-[#30d158]"></span>
-        <span>Telegram Bot · Версия 2.0</span>
+        <span>StopPay 2.0</span>
       </div>
 
-      <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight apple-gradient-text">
-        Все подписки.<br>Под абсолютным контролем.
+      <h1 class="text-5xl sm:text-7xl font-bold tracking-tight mb-5 apple-title leading-tight">
+        Все подписки.<br>Под контролем.
       </h1>
 
-      <p class="text-lg md:text-xl text-[#86868b] max-w-2xl mx-auto font-normal leading-relaxed mb-10">
-        Умный Telegram-бот, предупреждающий о списаниях за 24 часа. С красивой аналитикой в стиле Apple Card и прямой ссылкой на отмену в 1 клик.
+      <p class="text-lg sm:text-xl text-[#86868b] max-w-xl mx-auto font-normal leading-relaxed mb-8">
+        Уведомление за 24 часа. Аналитика Apple Card. Отмена в один тап.
       </p>
 
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="https://t.me/" target="_blank" class="w-full sm:w-auto bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium px-7 py-3 rounded-full text-sm transition apple-blue-glow">
-          Начать бесплатно в Telegram
+      <div class="flex items-center justify-center gap-3">
+        <a href="https://t.me/" target="_blank" class="bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium px-6 py-2.5 rounded-full text-sm transition">
+          Запустить бесплатно
         </a>
-        <a href="#demo" class="w-full sm:w-auto bg-[#1c1c1e] hover:bg-[#2c2c2e] text-[#f5f5f7] font-medium px-7 py-3 rounded-full text-sm border border-white/10 transition">
-          Интерактивное демо ↓
+        <a href="#demo" class="bg-[#1c1c1e] hover:bg-[#2c2c2e] text-[#f5f5f7] font-medium px-6 py-2.5 rounded-full text-sm border border-white/10 transition">
+          Попробовать ↓
         </a>
       </div>
 
-      <!-- Quick Metrics Ribbon -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 max-w-3xl mx-auto pt-10 border-t border-white/[0.08]">
+      <!-- 4 Simple Indicators -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16 pt-8 border-t border-white/[0.08] max-w-2xl mx-auto">
         <div>
-          <div class="text-2xl md:text-3xl font-bold text-white tracking-tight">24 часа</div>
-          <div class="text-xs text-[#86868b] mt-1">Упреждающий пуш</div>
+          <div class="text-2xl font-bold text-white">24ч</div>
+          <div class="text-xs text-[#86868b] mt-0.5">До списания</div>
         </div>
         <div>
-          <div class="text-2xl md:text-3xl font-bold text-white tracking-tight">4 валюты</div>
-          <div class="text-xs text-[#86868b] mt-1">BYN · RUB · USD · PLN</div>
+          <div class="text-2xl font-bold text-white">4</div>
+          <div class="text-xs text-[#86868b] mt-0.5">Валюты</div>
         </div>
         <div>
-          <div class="text-2xl md:text-3xl font-bold text-white tracking-tight">1 клик</div>
-          <div class="text-xs text-[#86868b] mt-1">Для отмены сервиса</div>
+          <div class="text-2xl font-bold text-white">1 тап</div>
+          <div class="text-xs text-[#86868b] mt-0.5">Для отмены</div>
         </div>
         <div>
-          <div class="text-2xl md:text-3xl font-bold text-white tracking-tight">0 ₽</div>
-          <div class="text-xs text-[#86868b] mt-1">Бесплатно навсегда</div>
+          <div class="text-2xl font-bold text-white">0 ₽</div>
+          <div class="text-xs text-[#86868b] mt-0.5">Бесплатно</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Interactive Device Mockup (Live Telegram UI) -->
-  <section id="demo" class="py-16 px-6 relative">
-    <div class="max-w-4xl mx-auto">
-      <div class="text-center mb-10">
-        <h2 class="text-xs uppercase font-bold tracking-widest text-[#2997ff] mb-2">Интерфейс StopPay</h2>
-        <p class="text-3xl md:text-4xl font-bold apple-gradient-text tracking-tight">Попробуйте бота прямо здесь</p>
-      </div>
-
-      <!-- Device Container -->
-      <div class="apple-card rounded-3xl overflow-hidden shadow-2xl border border-white/10 max-w-2xl mx-auto">
-        <!-- Mockup Header -->
-        <div class="bg-[#1c1c1e] px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#2997ff] to-[#bf5af2] flex items-center justify-center text-white font-bold text-base shadow-md">
-              
-            </div>
-            <div>
-              <div class="font-semibold text-sm flex items-center space-x-1.5">
-                <span>StopPay</span>
-                <span class="text-[#2997ff] text-xs">✓</span>
-              </div>
-              <div class="text-xs text-[#86868b]">бот учета подписок</div>
-            </div>
+  <!-- Interactive Demo Mockup (Clean & Focused) -->
+  <section id="demo" class="py-12 px-6">
+    <div class="max-w-xl mx-auto">
+      <div class="apple-card rounded-3xl overflow-hidden shadow-2xl">
+        <!-- Tab Bar -->
+        <div class="bg-[#18181b] px-5 py-3 border-b border-white/[0.08] flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-base text-white"></span>
+            <span class="font-semibold text-xs text-white">StopPay</span>
           </div>
-          <!-- Screen Selector Tabs -->
-          <div class="flex items-center bg-black/50 p-1 rounded-xl border border-white/10 text-xs">
-            <button onclick="switchTab('reminder')" id="tab-reminder" class="px-3 py-1 rounded-lg font-medium transition bg-[#2997ff] text-white">
-              🔔 Пуш
+          <div class="flex bg-black/60 p-0.5 rounded-lg text-xs">
+            <button onclick="switchTab('reminder')" id="tab-reminder" class="px-2.5 py-1 rounded-md font-medium transition bg-[#2997ff] text-white">
+              Пуш
             </button>
-            <button onclick="switchTab('card')" id="tab-card" class="px-3 py-1 rounded-lg font-medium transition text-[#86868b] hover:text-white">
-              💳 Карточка
+            <button onclick="switchTab('card')" id="tab-card" class="px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white">
+              Карточка
             </button>
-            <button onclick="switchTab('chart')" id="tab-chart" class="px-3 py-1 rounded-lg font-medium transition text-[#86868b] hover:text-white">
-              📊 Аналитика
+            <button onclick="switchTab('chart')" id="tab-chart" class="px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white">
+              Аналитика
             </button>
           </div>
         </div>
 
-        <!-- Mockup Screen Content -->
-        <div class="p-6 bg-black min-h-[380px] flex flex-col justify-center">
+        <!-- Tab Content -->
+        <div class="p-6 bg-black min-h-[300px] flex items-center justify-center">
 
-          <!-- View 1: 24h Reminder Notification -->
-          <div id="view-reminder" class="space-y-4">
-            <div class="bg-[#1c1c1e] border border-white/10 rounded-2xl p-5 max-w-md mx-auto shadow-lg">
-              <div class="flex items-center justify-between text-xs text-[#86868b] mb-3">
-                <span class="flex items-center space-x-1 font-semibold text-white">
-                  <span></span>
-                  <span>Напоминание о списании!</span>
-                </span>
+          <!-- View 1: Push Reminder -->
+          <div id="view-reminder" class="w-full max-w-sm space-y-3">
+            <div class="bg-[#18181b] border border-white/10 rounded-2xl p-4">
+              <div class="flex justify-between items-center text-[11px] text-[#86868b] mb-2">
+                <span class="font-semibold text-white"> Напоминание</span>
                 <span>Завтра в 10:00</span>
               </div>
-              <div class="h-px bg-white/10 mb-3"></div>
-              <p class="text-sm text-[#f5f5f7] leading-relaxed">
-                Завтра спишется <span class="text-white font-bold">800 ₽</span> за сервис <span class="text-white font-bold">Яндекс Плюс</span>.
-              </p>
-              <div class="mt-5 space-y-2">
-                <a href="https://plus.yandex.ru" target="_blank" class="block w-full py-2.5 text-center text-xs font-semibold rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] text-[#2997ff] border border-white/5 transition">
-                  🔗 Отменить подписку
+              <div class="text-sm text-white mb-4">
+                Завтра спишется <span class="font-bold text-[#2997ff]">299 ₽</span> за <b>Яндекс Плюс</b>.
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <a href="https://plus.yandex.ru" target="_blank" class="py-2 text-center rounded-xl bg-[#262629] text-[#2997ff] font-medium hover:bg-[#323236] transition">
+                  🔗 Отменить
                 </a>
-                <button onclick="simulatePaid()" id="btn-simulate-paid" class="block w-full py-2.5 text-center text-xs font-semibold rounded-xl bg-[#2997ff] hover:bg-[#0077ed] text-white transition">
-                  ✅ Отметить оплаченным
+                <button onclick="simulatePaid(this)" class="py-2 text-center rounded-xl bg-[#2997ff] text-white font-medium hover:bg-[#0077ed] transition">
+                  ✅ Оплачено
                 </button>
               </div>
-              <div id="paid-status" class="hidden mt-3 text-center text-xs text-[#30d158] font-medium">
-                ✓ Дата списания перенесена на следующий месяц!
+            </div>
+          </div>
+
+          <!-- View 2: Subscription Card -->
+          <div id="view-card" class="hidden w-full max-w-sm">
+            <div class="bg-[#18181b] border border-white/10 rounded-2xl p-4 text-xs font-mono">
+              <div class="flex justify-between items-center font-sans font-semibold text-white text-sm mb-2">
+                <span> Netflix</span>
+                <span class="text-[#30d158] text-xs">● Активна</span>
+              </div>
+              <div class="h-px bg-white/10 mb-2"></div>
+              <div class="space-y-1.5 text-[#86868b]">
+                <div class="flex justify-between"><span>Сумма:</span><span class="text-white font-sans">14.99 $ / месяц</span></div>
+                <div class="flex justify-between"><span>Списание:</span><span class="text-white font-sans">25.10.2026 (через 14 дн.)</span></div>
+                <div class="flex justify-between"><span>Ссылка:</span><span class="text-[#2997ff] font-sans">netflix.com/cancel</span></div>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5 mt-3 pt-2 font-sans border-t border-white/10 text-[11px]">
+                <button class="py-1.5 rounded-lg bg-[#262629] text-white">✏️ Изменить</button>
+                <button class="py-1.5 rounded-lg bg-[#262629] text-white">○ Пауза</button>
+                <button class="py-1.5 rounded-lg bg-[#262629] text-[#ff453a]">✕ Удалить</button>
               </div>
             </div>
           </div>
 
-          <!-- View 2: Subscription Details Card -->
-          <div id="view-card" class="hidden space-y-4">
-            <div class="bg-[#1c1c1e] border border-white/10 rounded-2xl p-5 max-w-md mx-auto shadow-lg font-mono text-xs">
-              <div class="flex items-center justify-between text-white font-bold text-sm mb-2 font-sans">
-                <span class="flex items-center space-x-1">
-                  <span></span>
-                  <span>Подписка: Netflix Premium</span>
-                </span>
-                <span class="text-[#30d158] text-xs font-normal">● Активна</span>
-              </div>
-              <div class="h-px bg-white/10 my-2"></div>
-              <div class="space-y-1.5 text-[#86868b] py-1">
-                <div class="flex justify-between">
-                  <span>Стоимость:</span>
-                  <span class="text-white font-semibold">14.99 $ / месяц</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Периодичность:</span>
-                  <span class="text-white">каждые 30 дн.</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Списание:</span>
-                  <span class="text-[#ff9f0a] font-semibold">25.10.2026 (через 14 дн.)</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Отмена:</span>
-                  <span class="text-[#2997ff] underline cursor-pointer">netflix.com/cancel</span>
-                </div>
-              </div>
-              <div class="grid grid-cols-2 gap-2 mt-4 font-sans text-xs">
-                <button class="py-2 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] text-white">✏️ Редактировать</button>
-                <button class="py-2 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] text-white">○ Приостановить</button>
-                <button class="py-2 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] text-[#ff453a]">✕ Удалить</button>
-                <button class="py-2 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] text-[#86868b]">‹ К списку</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- View 3: Apple Card Analytics -->
-          <div id="view-chart" class="hidden">
-            <div class="bg-[#1c1c1e] border border-white/10 rounded-2xl p-6 max-w-md mx-auto shadow-lg text-center">
-              <div class="text-xs text-[#86868b] uppercase tracking-wider font-semibold mb-1">
-                 Аналитика регулярных расходов
-              </div>
-              <div class="text-xs text-[#2997ff] font-medium mb-4">
-                Все расходы приведены к: ₽ (RUB)
-              </div>
-
-              <!-- SVG Donut Chart Mockup -->
-              <div class="relative w-44 h-44 mx-auto my-2">
+          <!-- View 3: Donut Analytics -->
+          <div id="view-chart" class="hidden w-full max-w-sm text-center">
+            <div class="bg-[#18181b] border border-white/10 rounded-2xl p-4">
+              <div class="relative w-36 h-36 mx-auto my-1">
                 <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
-                  <circle cx="50" cy="50" r="38" stroke="#1c1c1e" stroke-width="14" fill="none" />
-                  <!-- Яндекс Плюс (Blue) -->
-                  <circle cx="50" cy="50" r="38" stroke="#2997ff" stroke-width="14" stroke-dasharray="85 240" stroke-dashoffset="0" fill="none" />
-                  <!-- Netflix (Mint) -->
-                  <circle cx="50" cy="50" r="38" stroke="#30d158" stroke-width="14" stroke-dasharray="60 240" stroke-dashoffset="-88" fill="none" />
-                  <!-- Spotify (Orange) -->
-                  <circle cx="50" cy="50" r="38" stroke="#ff9f0a" stroke-width="14" stroke-dasharray="45 240" stroke-dashoffset="-150" fill="none" />
-                  <!-- YouTube (Purple) -->
-                  <circle cx="50" cy="50" r="38" stroke="#bf5af2" stroke-width="14" stroke-dasharray="35 240" stroke-dashoffset="-198" fill="none" />
+                  <circle cx="50" cy="50" r="38" stroke="#262629" stroke-width="13" fill="none" />
+                  <circle cx="50" cy="50" r="38" stroke="#2997ff" stroke-width="13" stroke-dasharray="90 240" stroke-dashoffset="0" fill="none" />
+                  <circle cx="50" cy="50" r="38" stroke="#30d158" stroke-width="13" stroke-dasharray="60 240" stroke-dashoffset="-92" fill="none" />
+                  <circle cx="50" cy="50" r="38" stroke="#ff9f0a" stroke-width="13" stroke-dasharray="45 240" stroke-dashoffset="-154" fill="none" />
+                  <circle cx="50" cy="50" r="38" stroke="#bf5af2" stroke-width="13" stroke-dasharray="35 240" stroke-dashoffset="-201" fill="none" />
                 </svg>
-                <!-- Donut Center Text -->
-                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span class="text-[9px] font-bold text-[#86868b] tracking-wider">ВСЕГО В ГОД</span>
-                  <span class="text-xl font-extrabold text-white tracking-tight">18 400</span>
-                  <span class="text-[10px] text-[#86868b]">₽ (RUB)</span>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-[8px] font-bold text-[#86868b] tracking-wider">ВСЕГО В ГОД</span>
+                  <span class="text-base font-extrabold text-white">18 400</span>
+                  <span class="text-[9px] text-[#86868b]">₽ (RUB)</span>
                 </div>
               </div>
-
-              <!-- Legend -->
-              <div class="grid grid-cols-2 gap-2 text-left text-xs mt-4 pt-3 border-t border-white/10">
-                <div class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#2997ff]"></span>
-                  <span class="truncate text-[#f5f5f7]">Яндекс Плюс (38%)</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#30d158]"></span>
-                  <span class="truncate text-[#f5f5f7]">Netflix (26%)</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#ff9f0a]"></span>
-                  <span class="truncate text-[#f5f5f7]">Spotify (20%)</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#bf5af2]"></span>
-                  <span class="truncate text-[#f5f5f7]">YouTube (16%)</span>
-                </div>
+              <div class="grid grid-cols-2 gap-1.5 text-[11px] text-[#86868b] mt-3 pt-2 border-t border-white/10 text-left">
+                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#2997ff]"></span><span class="text-white">Яндекс (39%)</span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#30d158]"></span><span class="text-white">Netflix (26%)</span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#ff9f0a]"></span><span class="text-white">Spotify (19%)</span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#bf5af2]"></span><span class="text-white">YouTube (16%)</span></div>
               </div>
             </div>
           </div>
@@ -292,230 +212,166 @@
     </div>
   </section>
 
-  <!-- Apple Bento Grid Features -->
-  <section id="features" class="py-24 px-6">
-    <div class="max-w-5xl mx-auto">
-      <div class="text-center mb-16">
-        <h2 class="text-xs uppercase font-bold tracking-widest text-[#2997ff] mb-2">Философия простоты</h2>
-        <p class="text-4xl md:text-5xl font-bold apple-gradient-text tracking-tight">Инновации в каждом байке</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        <!-- Bento Card 1 (Large 2 cols) -->
-        <div class="md:col-span-2 apple-card rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
-          <div class="relative z-10 max-w-md">
-            <span class="text-[#ff9f0a] text-xs font-bold uppercase tracking-wider">Упреждающий контроль</span>
-            <h3 class="text-2xl md:text-3xl font-bold text-white mt-2 mb-4 tracking-tight">
-              Напоминание за 24 часа.<br>Никаких внезапных списаний.
-            </h3>
-            <p class="text-sm text-[#86868b] leading-relaxed">
-              Фоновый планировщик ежедневно проверяет подписки и в 10:00 утра предупреждает о платежах следующего дня. Вы всегда успеете отказаться от сервиса до того, как с карты спишутся средства.
-            </p>
-          </div>
-          <div class="mt-8 pt-6 border-t border-white/5 flex items-center space-x-3 text-xs text-[#f5f5f7]">
-            <span class="w-2 h-2 rounded-full bg-[#30d158]"></span>
-            <span>Автоматический перенос даты списания при отметке об оплате</span>
-          </div>
-        </div>
-
-        <!-- Bento Card 2 (1 col) -->
-        <div class="apple-card rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
-          <div>
-            <span class="text-[#2997ff] text-xs font-bold uppercase tracking-wider">Apple Card Design</span>
-            <h3 class="text-xl md:text-2xl font-bold text-white mt-2 mb-3 tracking-tight">Кольца трат</h3>
-            <p class="text-sm text-[#86868b] leading-relaxed">
-              Структура расходов строится в наглядную кольцевую диаграмму с итоговым прогнозом расходов на год прямо по центру.
-            </p>
-          </div>
-          <div class="mt-6 flex justify-center">
-            <div class="w-20 h-20 rounded-full border-4 border-[#2997ff] border-t-[#bf5af2] border-r-[#30d158] flex items-center justify-center">
-              <span class="text-xs font-bold">100%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bento Card 3 (1 col) -->
-        <div class="apple-card rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
-          <div>
-            <span class="text-[#bf5af2] text-xs font-bold uppercase tracking-wider">Мультивалютность</span>
-            <h3 class="text-xl md:text-2xl font-bold text-white mt-2 mb-3 tracking-tight">4 валюты</h3>
-            <p class="text-sm text-[#86868b] leading-relaxed">
-              BYN (Br), RUB (₽), USD ($) и PLN (zł). Автоматический пересчет по реальным биржевым курсам без ручных расчетов.
-            </p>
-          </div>
-          <div class="mt-6 flex items-center space-x-2 text-xs font-mono text-[#86868b]">
-            <span class="px-2 py-1 rounded bg-[#1c1c1e] text-white">BYN</span>
-            <span>⇄</span>
-            <span class="px-2 py-1 rounded bg-[#1c1c1e] text-white">RUB</span>
-            <span>⇄</span>
-            <span class="px-2 py-1 rounded bg-[#1c1c1e] text-white">USD</span>
-          </div>
-        </div>
-
-        <!-- Bento Card 4 (Large 2 cols) -->
-        <div class="md:col-span-2 apple-card rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
-          <div class="relative z-10 max-w-md">
-            <span class="text-[#30d158] text-xs font-bold uppercase tracking-wider">Забота о времени</span>
-            <h3 class="text-2xl md:text-3xl font-bold text-white mt-2 mb-4 tracking-tight">
-              Ссылка на отмену подписки прямо в сообщении.
-            </h3>
-            <p class="text-sm text-[#86868b] leading-relaxed">
-              Больше не нужно мучительно искать кнопку отмены в дебрях личных кабинетов. Прикрепите ссылку один раз при добавлении, и бот предоставит ее в нужный момент.
-            </p>
-          </div>
-          <div class="mt-8 flex items-center space-x-4">
-            <span class="text-xs text-[#86868b]">Поддерживает:</span>
-            <span class="text-xs font-medium text-white">Яндекс · Spotify · YouTube · Apple · Netflix · Telegram</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- Interactive Expense Calculator -->
-  <section id="calculator" class="py-20 px-6 bg-[#0a0a0c] border-y border-white/[0.08]">
+  <!-- Bento Grid (Concise & Easy on the eyes) -->
+  <section id="features" class="py-20 px-6">
     <div class="max-w-4xl mx-auto">
-      <div class="text-center mb-12">
-        <h2 class="text-xs uppercase font-bold tracking-widest text-[#2997ff] mb-2">Интерактивный симулятор</h2>
-        <p class="text-3xl md:text-4xl font-bold apple-gradient-text tracking-tight">Сколько вы тратите на подписки?</p>
-        <p class="text-sm text-[#86868b] mt-2">Выберите подписки или настройте сумму, чтобы увидеть годовой итог</p>
-      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center apple-card rounded-3xl p-8">
-        <!-- Checkboxes -->
-        <div class="space-y-3">
-          <label class="flex items-center justify-between p-3 rounded-2xl bg-[#1c1c1e] border border-white/5 cursor-pointer hover:border-white/20 transition">
-            <div class="flex items-center space-x-3">
-              <input type="checkbox" checked onchange="calculateSpend()" class="calc-sub w-4 h-4 rounded text-[#2997ff] bg-black border-white/20" data-price="299">
-              <span class="text-sm font-medium">Яндекс Плюс</span>
-            </div>
-            <span class="text-xs text-[#86868b] font-mono">299 ₽ / мес</span>
-          </label>
-
-          <label class="flex items-center justify-between p-3 rounded-2xl bg-[#1c1c1e] border border-white/5 cursor-pointer hover:border-white/20 transition">
-            <div class="flex items-center space-x-3">
-              <input type="checkbox" checked onchange="calculateSpend()" class="calc-sub w-4 h-4 rounded text-[#2997ff] bg-black border-white/20" data-price="399">
-              <span class="text-sm font-medium">Telegram Premium</span>
-            </div>
-            <span class="text-xs text-[#86868b] font-mono">399 ₽ / мес</span>
-          </label>
-
-          <label class="flex items-center justify-between p-3 rounded-2xl bg-[#1c1c1e] border border-white/5 cursor-pointer hover:border-white/20 transition">
-            <div class="flex items-center space-x-3">
-              <input type="checkbox" checked onchange="calculateSpend()" class="calc-sub w-4 h-4 rounded text-[#2997ff] bg-black border-white/20" data-price="249">
-              <span class="text-sm font-medium">Spotify Individual</span>
-            </div>
-            <span class="text-xs text-[#86868b] font-mono">249 ₽ / мес</span>
-          </label>
-
-          <label class="flex items-center justify-between p-3 rounded-2xl bg-[#1c1c1e] border border-white/5 cursor-pointer hover:border-white/20 transition">
-            <div class="flex items-center space-x-3">
-              <input type="checkbox" onchange="calculateSpend()" class="calc-sub w-4 h-4 rounded text-[#2997ff] bg-black border-white/20" data-price="799">
-              <span class="text-sm font-medium">Netflix HD</span>
-            </div>
-            <span class="text-xs text-[#86868b] font-mono">799 ₽ / мес</span>
-          </label>
-
-          <label class="flex items-center justify-between p-3 rounded-2xl bg-[#1c1c1e] border border-white/5 cursor-pointer hover:border-white/20 transition">
-            <div class="flex items-center space-x-3">
-              <input type="checkbox" onchange="calculateSpend()" class="calc-sub w-4 h-4 rounded text-[#2997ff] bg-black border-white/20" data-price="149">
-              <span class="text-sm font-medium">iCloud 200 GB</span>
-            </div>
-            <span class="text-xs text-[#86868b] font-mono">149 ₽ / мес</span>
-          </label>
+        <!-- Card 1 -->
+        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <span class="text-[#ff9f0a] text-[11px] font-bold uppercase tracking-wider">Уведомления</span>
+            <h3 class="text-xl font-bold text-white mt-1 mb-2">За 24 часа.</h3>
+            <p class="text-xs text-[#86868b] leading-relaxed">
+              Бот присылает алерт в 10:00 за сутки до списания. Вы всегда успеете отменить ненужный тариф.
+            </p>
+          </div>
+          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-[#30d158]">
+            ● Автоперенос даты при подтверждении
+          </div>
         </div>
 
-        <!-- Spend Result Card -->
-        <div class="text-center p-6 bg-black rounded-2xl border border-white/10 flex flex-col justify-center">
-          <div class="text-xs uppercase font-bold text-[#86868b] tracking-wider mb-2">Прогноз расходов в год</div>
-          <div id="calc-annual" class="text-5xl font-extrabold text-white tracking-tight mb-2">
-            11 364 ₽
+        <!-- Card 2 -->
+        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <span class="text-[#2997ff] text-[11px] font-bold uppercase tracking-wider">Аналитика</span>
+            <h3 class="text-xl font-bold text-white mt-1 mb-2">Apple Card стиль.</h3>
+            <p class="text-xs text-[#86868b] leading-relaxed">
+              Наглядное кольцо расходов с общей суммой на год прямо в центре диаграммы.
+            </p>
           </div>
-          <div id="calc-monthly" class="text-sm text-[#86868b] mb-6">
-            Средняя нагрузка: ~947 ₽ / месяц
+          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-[#2997ff]">
+            ● Прогноз на год и среднее в месяц
           </div>
-          <a href="https://t.me/" target="_blank" class="bg-[#0071e3] hover:bg-[#0077ed] text-white py-3 rounded-full text-xs font-semibold transition">
-            Взять под контроль в Telegram
-          </a>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <span class="text-[#bf5af2] text-[11px] font-bold uppercase tracking-wider">Мультивалютность</span>
+            <h3 class="text-xl font-bold text-white mt-1 mb-2">4 валюты.</h3>
+            <p class="text-xs text-[#86868b] leading-relaxed">
+              BYN (Br), RUB (₽), USD ($) и PLN (zł). Автоматический пересчет по биржевым курсам.
+            </p>
+          </div>
+          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-[#86868b] font-mono">
+            BYN ⇄ RUB ⇄ USD ⇄ PLN
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <span class="text-[#30d158] text-[11px] font-bold uppercase tracking-wider">Быстрота</span>
+            <h3 class="text-xl font-bold text-white mt-1 mb-2">Отмена в 1 тап.</h3>
+            <p class="text-xs text-[#86868b] leading-relaxed">
+              Прямая ссылка на страницу управления сервисом в каждом напоминании.
+            </p>
+          </div>
+          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-white">
+            ● Яндекс · Spotify · Apple · Netflix
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Mini Calculator (Compact & Clean) -->
+  <section id="calculator" class="py-16 px-6 border-t border-white/[0.08]">
+    <div class="max-w-2xl mx-auto">
+      <div class="text-center mb-8">
+        <h2 class="text-xs uppercase font-bold tracking-widest text-[#2997ff] mb-1">Калькулятор</h2>
+        <p class="text-2xl font-bold apple-title">Быстрый расчет трат</p>
+      </div>
+
+      <div class="apple-card rounded-3xl p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+          <div class="space-y-2">
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
+              <span class="flex items-center space-x-2">
+                <input type="checkbox" checked onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="299">
+                <span>Яндекс Плюс</span>
+              </span>
+              <span class="text-[#86868b]">299 ₽</span>
+            </label>
+
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
+              <span class="flex items-center space-x-2">
+                <input type="checkbox" checked onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="399">
+                <span>Telegram Premium</span>
+              </span>
+              <span class="text-[#86868b]">399 ₽</span>
+            </label>
+
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
+              <span class="flex items-center space-x-2">
+                <input type="checkbox" checked onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="249">
+                <span>Spotify</span>
+              </span>
+              <span class="text-[#86868b]">249 ₽</span>
+            </label>
+
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
+              <span class="flex items-center space-x-2">
+                <input type="checkbox" onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="799">
+                <span>Netflix</span>
+              </span>
+              <span class="text-[#86868b]">799 ₽</span>
+            </label>
+          </div>
+
+          <div class="text-center p-4 bg-black rounded-2xl border border-white/10">
+            <div class="text-[10px] uppercase font-bold text-[#86868b] tracking-wider mb-1">Итого в год</div>
+            <div id="res-year" class="text-3xl font-extrabold text-white tracking-tight mb-1">11 364 ₽</div>
+            <div id="res-month" class="text-xs text-[#86868b] mb-4">~947 ₽ / мес</div>
+            <a href="https://t.me/" target="_blank" class="block bg-[#0071e3] hover:bg-[#0077ed] text-white py-2 rounded-full text-xs font-medium transition">
+              Начать в Telegram
+            </a>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- CTA Banner Section -->
-  <section class="py-24 px-6 text-center relative overflow-hidden">
-    <div class="max-w-3xl mx-auto relative z-10">
-      <h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-6 apple-gradient-text">
-        Готовы навести порядок в подписках?
-      </h2>
-      <p class="text-base md:text-lg text-[#86868b] mb-10 max-w-xl mx-auto">
-        Запустите StopPay прямо сейчас. Никаких регистраций, паролей и установок — всё работает внутри любимого Telegram.
-      </p>
-      <a href="https://t.me/" target="_blank" class="inline-flex items-center space-x-2 bg-white text-black hover:bg-[#f5f5f7] font-semibold px-8 py-3.5 rounded-full text-sm transition shadow-lg hover:scale-105 duration-200">
-        <span>Открыть бота в Telegram</span>
-        <span>→</span>
-      </a>
+  <!-- Minimal Footer -->
+  <footer class="py-8 border-t border-white/[0.08] text-xs text-[#86868b] text-center px-6">
+    <div class="flex items-center justify-center space-x-2 mb-1">
+      <span class="text-white"> StopPay</span>
+      <span>·</span>
+      <span>Telegram Bot</span>
     </div>
-  </section>
-
-  <!-- Apple.com Style Minimal Footer -->
-  <footer class="py-12 border-t border-white/[0.08] text-xs text-[#86868b] px-6">
-    <div class="max-w-5xl mx-auto space-y-6">
-      <div class="space-y-2 text-[11px] leading-relaxed text-[#6e6e73]">
-        <p>1. Уведомления отправляются в фоновом режиме через асинхронный планировщик APScheduler ровно за 24 часа до даты списания.</p>
-        <p>2. Расчет аналитики основан на нормализованном 365-дневном календаре с автоматической конвертацией мультивалютных тарифов.</p>
-      </div>
-      <div class="h-px bg-white/[0.08]"></div>
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center space-x-3">
-          <span class="text-white font-semibold"> StopPay</span>
-          <span>·</span>
-          <span>Telegram Subscription Tracker</span>
-        </div>
-        <div>
-          Copyright © 2026 StopPay. Вдохновлено философией простоты и дизайна Apple.
-        </div>
-      </div>
+    <div class="text-[11px] text-[#6e6e73]">
+      Простота и контроль. Вдохновлено Apple.
     </div>
   </footer>
 
-  <!-- Interactive Scripts -->
   <script>
     function switchTab(tab) {
       document.getElementById('view-reminder').classList.add('hidden');
       document.getElementById('view-card').classList.add('hidden');
       document.getElementById('view-chart').classList.add('hidden');
 
-      document.getElementById('tab-reminder').className = 'px-3 py-1 rounded-lg font-medium transition text-[#86868b] hover:text-white';
-      document.getElementById('tab-card').className = 'px-3 py-1 rounded-lg font-medium transition text-[#86868b] hover:text-white';
-      document.getElementById('tab-chart').className = 'px-3 py-1 rounded-lg font-medium transition text-[#86868b] hover:text-white';
+      document.getElementById('tab-reminder').className = 'px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white';
+      document.getElementById('tab-card').className = 'px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white';
+      document.getElementById('tab-chart').className = 'px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white';
 
       document.getElementById('view-' + tab).classList.remove('hidden');
-      document.getElementById('tab-' + tab).className = 'px-3 py-1 rounded-lg font-medium transition bg-[#2997ff] text-white';
+      document.getElementById('tab-' + tab).className = 'px-2.5 py-1 rounded-md font-medium transition bg-[#2997ff] text-white';
     }
 
-    function simulatePaid() {
-      const btn = document.getElementById('btn-simulate-paid');
-      const status = document.getElementById('paid-status');
+    function simulatePaid(btn) {
       btn.innerText = '✓ Оплачено';
-      btn.classList.remove('bg-[#2997ff]', 'hover:bg-[#0077ed]');
-      btn.classList.add('bg-[#30d158]', 'text-black');
-      status.classList.remove('hidden');
+      btn.className = 'py-2 text-center rounded-xl bg-[#30d158] text-black font-semibold transition';
     }
 
-    function calculateSpend() {
-      const checkboxes = document.querySelectorAll('.calc-sub');
-      let monthly = 0;
-      checkboxes.forEach(cb => {
-        if (cb.checked) {
-          monthly += parseFloat(cb.dataset.price);
-        }
+    function calc() {
+      let sum = 0;
+      document.querySelectorAll('.calc-sub').forEach(cb => {
+        if (cb.checked) sum += parseFloat(cb.dataset.p);
       });
-      const annual = Math.round(monthly * 12);
-      document.getElementById('calc-annual').innerText = annual.toLocaleString('ru-RU') + ' ₽';
-      document.getElementById('calc-monthly').innerText = 'Средняя нагрузка: ~' + Math.round(monthly).toLocaleString('ru-RU') + ' ₽ / месяц';
+      document.getElementById('res-year').innerText = (sum * 12).toLocaleString('ru-RU') + ' ₽';
+      document.getElementById('res-month').innerText = '~' + Math.round(sum).toLocaleString('ru-RU') + ' ₽ / мес';
     }
   </script>
 </body>
