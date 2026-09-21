@@ -83,12 +83,11 @@ async def test_webapp_endpoints():
         data_json = await resp_json.json()
         assert data_json["status"] == "ok"
 
-        # 3. Test demo subscriptions API
+        # 3. Test subscriptions API
         resp_api = await client.get('/api/subscriptions?currency=RUB')
         assert resp_api.status == 200
         api_data = await resp_api.json()
         assert api_data["status"] == "ok"
-        assert api_data["is_demo"] is True
         assert len(api_data["subscriptions"]) > 0
         assert "metrics" in api_data
         assert api_data["metrics"]["total_annual"] > 0

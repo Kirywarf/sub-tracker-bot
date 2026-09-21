@@ -51,37 +51,22 @@ async def api_get_subscriptions(request: web.Request) -> web.Response:
     user_id_param = request.query.get("user_id")
     target_curr = request.query.get("currency", "RUB").upper().strip()
 
-    if not user_id_param:
-        demo_subs = [
-            {"id": 1, "service_name": "Яндекс Плюс", "price": 299.0, "currency": "RUB", "period_days": 30, "next_billing_date": "2026-10-15", "is_active": True, "cancel_url": "https://plus.yandex.ru"},
-            {"id": 2, "service_name": "Netflix", "price": 14.99, "currency": "USD", "period_days": 30, "next_billing_date": "2026-10-25", "is_active": True, "cancel_url": "https://netflix.com/cancel"},
-            {"id": 3, "service_name": "Spotify", "price": 19.99, "currency": "PLN", "period_days": 30, "next_billing_date": "2026-11-01", "is_active": True, "cancel_url": "https://spotify.com/account"},
-            {"id": 4, "service_name": "Telegram Premium", "price": 14.99, "currency": "BYN", "period_days": 30, "next_billing_date": "2026-10-20", "is_active": True, "cancel_url": "https://telegram.org"},
-        ]
-        rates = await get_exchange_rates()
-        from types import SimpleNamespace
-        mock_subs = [SimpleNamespace(**s) for s in demo_subs]
-        metrics = calculate_unified_metrics(mock_subs, target_currency=target_curr, rates=rates)
-        return web.json_response({
-            "status": "ok",
-            "is_demo": True,
-            "subscriptions": demo_subs,
-            "metrics": {
-                "total_annual": metrics["total_annual"],
-                "monthly_avg": metrics["monthly_avg"],
-                "services_count": metrics["services_count"],
-                "target_currency": metrics["target_currency"],
-                "services": metrics["services"],
-            },
-        })
-
     try:
-        user_id = int(user_id_param)
+        user_id = int(user_id_param) if user_id_param else 100001
     except ValueError:
-        return web.json_response({"status": "error", "message": "Invalid user_id"}, status=400)
+        user_id = 100001
 
     async with async_session_factory() as session:
         subs = await get_user_subscriptions(session, user_id=user_id)
+        if not subs and user_id == 100001:
+            from datetime import timedelta
+            today = date.today()
+            await get_or_create_user(session, telegram_id=100001, username="User")
+            await add_subscription(session, 100001, "Яндекс Плюс", 299.0, "RUB", 30, today + timedelta(days=14), "https://plus.yandex.ru")
+            await add_subscription(session, 100001, "Telegram Premium", 399.0, "RUB", 30, today + timedelta(days=21), "https://telegram.org")
+            await add_subscription(session, 100001, "Spotify", 19.99, "PLN", 30, today + timedelta(days=28), "https://spotify.com/account")
+            subs = await get_user_subscriptions(session, user_id=100001)
+
         rates = await get_exchange_rates()
         metrics = calculate_unified_metrics(subs, target_currency=target_curr, rates=rates)
         subs_list = [
@@ -99,7 +84,7 @@ async def api_get_subscriptions(request: web.Request) -> web.Response:
         ]
         return web.json_response({
             "status": "ok",
-            "is_demo": False,
+            "user_id": user_id,
             "subscriptions": subs_list,
             "metrics": {
                 "total_annual": metrics["total_annual"],
@@ -171,6 +156,24 @@ async def cors_middleware(request: web.Request, handler):
     return resp
 
 
+async def create_app(bot: Bot, dp: Dispatcher) -> web.Application:
+    from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+
+    app = web.Application(middlewares=[cors_middleware])
+    app.router.add_get("/", serve_index)
+    app.router.add_get("/health", health_check)
+    app.router.add_get("/app", serve_index)
+    app.router.add_get("/api/subscriptions", api_get_subscriptions)
+    app.router.add_post("/api/subscriptions", api_create_subscription)
+    app.router.add_post("/api/subscriptions/{id}/toggle", api_toggle_subscription)
+    app.router.add_delete("/api/subscriptions/{id}", api_delete_subscription)
+
+    webhook_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
+    webhook_handler.register(app, path="/webhook")
+    setup_application(app, dp, bot=bot)
+    return app
+
+
 async def start_health_server(port: int) -> web.AppRunner:
     app = web.Application(middlewares=[cors_middleware])
     app.router.add_get("/", serve_index)
@@ -190,11 +193,6 @@ async def start_health_server(port: int) -> web.AppRunner:
 
 async def main() -> None:
     logger.info("Initializing Sub Tracker Bot...")
-
-    # Start health check server if PORT is specified (e.g. Render Web Service)
-    health_runner: Optional[web.AppRunner] = None
-    if settings.PORT > 0:
-        health_runner = await start_health_server(settings.PORT)
 
     # Check BOT_TOKEN configuration
     if not settings.BOT_TOKEN or settings.BOT_TOKEN == "123456789:ABCdefGHIjklMNOpqrsTUVwxyz":
@@ -253,29 +251,85 @@ async def main() -> None:
     scheduler.start()
     logger.info("APScheduler started successfully.")
 
-    try:
-        if settings.WEBAPP_URL:
-            try:
-                from aiogram.types import MenuButtonWebApp, WebAppInfo
-                await bot.set_chat_menu_button(
-                    menu_button=MenuButtonWebApp(
-                        text="StopPay ",
-                        web_app=WebAppInfo(url=settings.WEBAPP_URL),
-                    )
-                )
-                logger.info(f"Telegram chat menu button configured: {settings.WEBAPP_URL}")
-            except Exception as mb_err:
-                logger.warning(f"Could not set chat menu button: {mb_err}")
+    if settings.PORT > 0 and settings.WEBAPP_URL:
+        # Running on Render (Web Service): Use Webhook architecture to avoid TelegramConflictError
+        logger.info(f"Starting server in WEBHOOK mode on port {settings.PORT}...")
+        app = await create_app(bot, dp)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, host="0.0.0.0", port=settings.PORT)
+        await site.start()
+        logger.info(f"Aiohttp, WebApp & Webhook server listening on port {settings.PORT}")
 
-        logger.info("Bot is polling for updates...")
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
-    finally:
-        logger.info("Shutting down...")
-        if health_runner:
-            await health_runner.cleanup()
-        scheduler.shutdown(wait=False)
-        await bot.session.close()
+        webhook_url = f"{settings.WEBAPP_URL.rstrip('/')}/webhook"
+        await bot.set_webhook(
+            url=webhook_url,
+            drop_pending_updates=True,
+            allowed_updates=["message", "callback_query"],
+        )
+        logger.info(f"Telegram Webhook configured: {webhook_url}")
+
+        try:
+            from aiogram.types import MenuButtonWebApp, WebAppInfo
+            await bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(
+                    text="StopPay ",
+                    web_app=WebAppInfo(url=settings.WEBAPP_URL),
+                )
+            )
+            logger.info(f"Telegram chat menu button configured: {settings.WEBAPP_URL}")
+        except Exception as mb_err:
+            logger.warning(f"Could not set chat menu button: {mb_err}")
+
+        stop_event = asyncio.Event()
+        import signal
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            try:
+                loop.add_signal_handler(sig, stop_event.set)
+            except (NotImplementedError, AttributeError):
+                pass
+
+        try:
+            logger.info("Bot is ready and receiving updates via Webhook.")
+            await stop_event.wait()
+        finally:
+            logger.info("Shutting down Webhook server...")
+            try:
+                await bot.delete_webhook()
+            except Exception:
+                pass
+            await runner.cleanup()
+            scheduler.shutdown(wait=False)
+            await bot.session.close()
+    else:
+        # Local development: Polling mode
+        health_runner: Optional[web.AppRunner] = None
+        if settings.PORT > 0:
+            health_runner = await start_health_server(settings.PORT)
+
+        try:
+            if settings.WEBAPP_URL:
+                try:
+                    from aiogram.types import MenuButtonWebApp, WebAppInfo
+                    await bot.set_chat_menu_button(
+                        menu_button=MenuButtonWebApp(
+                            text="StopPay ",
+                            web_app=WebAppInfo(url=settings.WEBAPP_URL),
+                        )
+                    )
+                except Exception:
+                    pass
+
+            logger.info("Bot is polling for updates (local mode)...")
+            await bot.delete_webhook(drop_pending_updates=True)
+            await dp.start_polling(bot)
+        finally:
+            logger.info("Shutting down Polling...")
+            if health_runner:
+                await health_runner.cleanup()
+            scheduler.shutdown(wait=False)
+            await bot.session.close()
 
 
 if __name__ == "__main__":

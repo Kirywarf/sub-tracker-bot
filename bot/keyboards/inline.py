@@ -1,6 +1,7 @@
 from typing import List, Optional
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from database.models import Subscription
+from config import settings
 
 CURRENCY_LABELS = {
     "BYN": "🇧🇾 BYN (Br)",
@@ -40,7 +41,7 @@ def get_skip_cancel_url_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_subscriptions_list_keyboard(subscriptions: List[Subscription]) -> InlineKeyboardMarkup:
+def get_subscriptions_list_keyboard(subscriptions: List[Subscription], user_id: Optional[int] = None) -> InlineKeyboardMarkup:
     buttons = []
     for sub in subscriptions:
         status_icon = "●" if sub.is_active else "○"
@@ -51,6 +52,14 @@ def get_subscriptions_list_keyboard(subscriptions: List[Subscription]) -> Inline
         buttons.append([InlineKeyboardButton(text=btn_text, callback_data=f"view_sub_{sub.id}")])
 
     buttons.append([InlineKeyboardButton(text="＋ Добавить подписку", callback_data="add_new_sub")])
+
+    if getattr(settings, "WEBAPP_URL", None):
+        url = settings.WEBAPP_URL
+        if user_id:
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}user_id={user_id}"
+        buttons.append([InlineKeyboardButton(text=" Открыть StopPay App", web_app=WebAppInfo(url=url))])
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -124,7 +133,7 @@ def get_edit_currency_keyboard(sub_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_analytics_currency_keyboard(active_currency: str) -> InlineKeyboardMarkup:
+def get_analytics_currency_keyboard(active_currency: str, user_id: Optional[int] = None) -> InlineKeyboardMarkup:
     active = active_currency.upper().strip()
     currencies = [
         ("BYN", "🇧🇾 BYN"),
@@ -142,5 +151,13 @@ def get_analytics_currency_keyboard(active_currency: str) -> InlineKeyboardMarku
             row = []
     if row:
         buttons.append(row)
+
+    if getattr(settings, "WEBAPP_URL", None):
+        url = settings.WEBAPP_URL
+        if user_id:
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}user_id={user_id}"
+        buttons.append([InlineKeyboardButton(text=" Интерактивная аналитика", web_app=WebAppInfo(url=url))])
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

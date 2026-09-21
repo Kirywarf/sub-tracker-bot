@@ -12,8 +12,11 @@ router = Router(name="common")
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext) -> None:
     await state.clear()
+    first_name = message.from_user.first_name if message.from_user else "друг"
+    user_id = message.from_user.id if message.from_user else 0
+
     welcome_text = (
-        f" Привет, <b>{message.from_user.first_name}</b>!\n\n"
+        f" Привет, <b>{first_name}</b>!\n\n"
         "<b>StopPay</b> — контроль ваших подписок.\n\n"
         "• <b>24 часа</b> — алерт до списания\n"
         "• <b>1 тап</b> — прямая ссылка на отмену\n"
@@ -21,7 +24,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         "• <b>4 валюты</b> — BYN · RUB · USD · PLN\n\n"
         "Выберите действие:"
     )
-    await send_clean_message(message, welcome_text, reply_markup=get_main_menu_keyboard())
+    await send_clean_message(message, welcome_text, reply_markup=get_main_menu_keyboard(user_id=user_id))
 
 
 @router.message(Command("help"))
@@ -35,7 +38,8 @@ async def cmd_help(message: Message) -> None:
         "• <b>🔔 Уведомление</b> — приходит за 24 часа до оплаты\n\n"
         "Сброс любого шага: <b>❌ Отмена</b>"
     )
-    await send_clean_message(message, help_text, reply_markup=get_main_menu_keyboard())
+    user_id = message.from_user.id if message.from_user else 0
+    await send_clean_message(message, help_text, reply_markup=get_main_menu_keyboard(user_id=user_id))
 
 
 @router.message(Command("cancel"))
