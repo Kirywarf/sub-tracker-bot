@@ -1,3 +1,4 @@
+from typing import Optional
 from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -41,6 +42,15 @@ class Settings(BaseSettings):
     REMINDER_HOUR: int = 10
     REMINDER_MINUTE: int = 0
     PORT: int = 0
+    WEBAPP_URL: str = ""
+
+    @field_validator("WEBAPP_URL", mode="before")
+    @classmethod
+    def set_default_webapp_url(cls, v: Optional[str]) -> str:
+        import os
+        if not v:
+            return os.getenv("RENDER_EXTERNAL_URL", "https://sub-tracker-bot.onrender.com")
+        return v
 
     @field_validator("DB_URL", mode="after")
     @classmethod

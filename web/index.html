@@ -1,378 +1,839 @@
 <!DOCTYPE html>
-<html lang="ru" class="scroll-smooth">
+<html lang="ru" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StopPay — Подписки под контролем</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>StopPay  — Подписки</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            apple: {
+              black: '#000000',
+              card: '#121214',
+              surface: '#1c1c1e',
+              elevated: '#242426',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderHover: 'rgba(255, 255, 255, 0.16)',
+              blue: '#2997ff',
+              green: '#30d158',
+              orange: '#ff9f0a',
+              purple: '#bf5af2',
+              pink: '#ff375f',
+              yellow: '#ffd60a',
+              red: '#ff453a',
+              gray: '#86868b',
+              grayLight: '#aeaeb2',
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
       background-color: #000000;
       color: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
       -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .apple-glass {
-      background: rgba(18, 18, 20, 0.7);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
+    input, button, select, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .glass-header {
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .apple-card {
-      background: #111113;
+    .glass-tab {
+      background: rgba(28, 28, 30, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.25s ease;
     }
-    .apple-card:hover {
-      border-color: rgba(255, 255, 255, 0.18);
+    .apple-card {
+      background-color: #121214;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
     }
-    .apple-title {
-      background: linear-gradient(180deg, #ffffff 15%, rgba(255, 255, 255, 0.6) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .apple-card:active {
+      transform: scale(0.99);
     }
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: #000000; }
-    ::-webkit-scrollbar-thumb { background: #262629; border-radius: 3px; }
+    .sheet-modal {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+    .sheet-modal.hidden-sheet {
+      transform: translateY(100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .donut-slice {
+      transition: stroke-dasharray 0.6s cubic-bezier(0.16, 1, 0.3, 1), stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #dynamic-toast {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+    #dynamic-toast.toast-hidden {
+      transform: translate(-50%, -120%);
+      opacity: 0;
+      pointer-events: none;
+    }
   </style>
 </head>
-<body class="bg-black text-[#f5f5f7] selection:bg-[#2997ff] selection:text-white">
+<body class="min-h-screen bg-black text-[#f5f5f7] flex flex-col pb-24 overflow-x-hidden selection:bg-[#2997ff] selection:text-white">
 
-  <!-- Navbar -->
-  <nav class="fixed top-0 inset-x-0 z-50 apple-glass">
-    <div class="max-w-5xl mx-auto px-6 h-12 flex items-center justify-between text-xs">
-      <div class="flex items-center space-x-8">
-        <a href="#" class="flex items-center space-x-2 text-white font-semibold">
-          <span class="text-base"></span>
-          <span class="tracking-tight text-sm">StopPay</span>
-        </a>
-        <div class="hidden sm:flex items-center space-x-6 text-[#86868b]">
-          <a href="#features" class="hover:text-white transition">Возможности</a>
-          <a href="#demo" class="hover:text-white transition">Демо</a>
-          <a href="#calculator" class="hover:text-white transition">Калькулятор</a>
+  <!-- Dynamic Island Toast -->
+  <div id="dynamic-toast" class="toast-hidden fixed top-3 left-1/2 -translate-x-1/2 z-50 flex items-center space-x-2 px-4 py-2 rounded-full bg-[#1c1c1e] text-white border border-white/10 shadow-2xl text-xs font-medium">
+    <span id="toast-icon">✓</span>
+    <span id="toast-message">Успешно</span>
+  </div>
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 glass-header px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <span class="text-xl leading-none text-white font-semibold"></span>
+      <div>
+        <div class="text-sm font-bold tracking-tight text-white flex items-center space-x-1.5">
+          <span>StopPay</span>
+          <span id="user-badge" class="text-[10px] font-normal px-2 py-0.5 rounded-full bg-white/10 text-white/70">Подписки</span>
         </div>
       </div>
-      <a href="https://t.me/" target="_blank" class="bg-[#0071e3] hover:bg-[#0077ed] text-white px-3.5 py-1 rounded-full font-medium transition text-xs flex items-center space-x-1">
-        <span>Открыть в Telegram</span>
-        <span>↗</span>
-      </a>
+    </div>
+
+    <!-- Currency Selector Segmented Bar -->
+    <div class="flex items-center bg-[#1c1c1e] p-0.5 rounded-xl border border-white/10 text-[11px] font-medium">
+      <button onclick="changeCurrency('RUB')" id="curr-btn-RUB" class="curr-pill px-2.5 py-1 rounded-lg transition bg-white/15 text-white font-semibold">₽</button>
+      <button onclick="changeCurrency('BYN')" id="curr-btn-BYN" class="curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white">Br</button>
+      <button onclick="changeCurrency('USD')" id="curr-btn-USD" class="curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white">$</button>
+      <button onclick="changeCurrency('PLN')" id="curr-btn-PLN" class="curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white">zł</button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-lg mx-auto w-full px-4 pt-4 space-y-4">
+
+    <!-- Demo Banner (shown only when opened outside Telegram or without user_id) -->
+    <div id="demo-banner" class="hidden apple-card rounded-2xl p-3 text-xs border-dashed border-[#2997ff]/40 bg-[#2997ff]/5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-[#2997ff] animate-pulse"></span>
+          <span class="font-semibold text-[#2997ff]">Демо-режим</span>
+          <span class="text-white/60">Открыто в браузере</span>
+        </div>
+        <button onclick="promptUserId()" class="text-[11px] underline text-[#2997ff] hover:text-white transition">
+          Ввести ID
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: ANALYTICS / OVERVIEW -->
+    <section id="view-analytics" class="space-y-4">
+
+      <!-- Apple Card Donut Widget -->
+      <div class="apple-card rounded-3xl p-5 text-center relative overflow-hidden">
+        <!-- Radial glow effect -->
+        <div class="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#2997ff]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10">
+          <div class="text-[10px] font-bold text-[#86868b] tracking-[0.2em] uppercase mb-3">
+            В С Е Г О   В   Г О Д
+          </div>
+
+          <!-- SVG Donut Chart with Center Display -->
+          <div class="relative w-48 h-48 mx-auto my-2">
+            <svg viewBox="0 0 160 160" class="w-full h-full -rotate-90">
+              <!-- Background ring -->
+              <circle cx="80" cy="80" r="62" stroke="#1c1c1e" stroke-width="14" fill="none" />
+              <!-- Segments container -->
+              <g id="donut-segments"></g>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2">
+              <span id="chart-total-amount" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">0 ₽</span>
+              <span id="chart-monthly-avg" class="text-[11px] text-[#86868b] mt-0.5 font-medium">~0 ₽ / мес</span>
+              <div id="chart-services-badge" class="mt-1 text-[9px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-white/80">
+                0 активных
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribution breakdown pills -->
+          <div id="services-breakdown" class="mt-4 pt-3 border-t border-white/[0.08] grid grid-cols-2 gap-2 text-left text-xs">
+            <!-- Dynamic breakdown items inserted here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Health/Activity Spend Bar Chart -->
+      <div class="apple-card rounded-3xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-[10px] font-bold text-[#86868b] tracking-wider uppercase">Календарь трат</div>
+            <div class="text-sm font-bold text-white">Прогноз по месяцам</div>
+          </div>
+          <span class="text-xs font-semibold text-[#30d158] bg-[#30d158]/10 px-2 py-0.5 rounded-full">
+            Стабильно
+          </span>
+        </div>
+
+        <div id="monthly-bars" class="h-28 flex items-end justify-between gap-1 pt-4 pb-2 px-1">
+          <!-- 12 monthly bars inserted here -->
+        </div>
+        <div class="flex justify-between text-[10px] text-[#86868b] font-medium px-1">
+          <span>Янв</span><span>Фев</span><span>Мар</span><span>Апр</span><span>Май</span><span>Июн</span><span>Июл</span><span>Авг</span><span>Сен</span><span>Окт</span><span>Ноя</span><span>Дек</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 2: SUBSCRIPTIONS LIST -->
+    <section id="view-subscriptions" class="hidden space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <div class="text-[10px] font-bold text-[#86868b] tracking-wider uppercase">Управление</div>
+          <h2 class="text-base font-bold text-white">Ваши подписки</h2>
+        </div>
+        <button onclick="openAddModal()" class="flex items-center space-x-1 text-xs font-medium text-[#2997ff] bg-[#2997ff]/10 hover:bg-[#2997ff]/20 px-3 py-1.5 rounded-full transition">
+          <span class="text-base leading-none">＋</span>
+          <span>Добавить</span>
+        </button>
+      </div>
+
+      <!-- Dynamic Subscriptions Container -->
+      <div id="subs-list-container" class="space-y-2.5">
+        <!-- Subscriptions rendered dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Floating Tab Bar (Apple iOS Style) -->
+  <nav class="fixed bottom-4 inset-x-4 max-w-sm mx-auto z-40">
+    <div class="glass-tab rounded-full p-1.5 shadow-2xl flex items-center justify-around">
+      <button onclick="switchTab('analytics')" id="nav-analytics" class="flex-1 flex flex-col items-center py-1.5 rounded-full transition text-white bg-white/10 font-medium">
+        <span class="text-base">📊</span>
+        <span class="text-[10px] mt-0.5">Обзор</span>
+      </button>
+
+      <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="flex-1 flex flex-col items-center py-1.5 rounded-full transition text-white/50 hover:text-white font-medium">
+        <span class="text-base">📋</span>
+        <span class="text-[10px] mt-0.5">Подписки</span>
+      </button>
+
+      <button onclick="openAddModal()" class="flex-1 flex flex-col items-center py-1.5 rounded-full transition text-[#2997ff] font-medium active:scale-95">
+        <span class="text-base font-bold">＋</span>
+        <span class="text-[10px] mt-0.5">Создать</span>
+      </button>
     </div>
   </nav>
 
-  <!-- Hero Section (Minimalist & High Impact) -->
-  <section class="relative pt-36 pb-20 text-center overflow-hidden">
-    <!-- Ambient glow -->
-    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-gradient-to-tr from-[#2997ff]/20 to-[#bf5af2]/15 rounded-full blur-[100px] pointer-events-none"></div>
+  <!-- Add Subscription Bottom Sheet Modal -->
+  <div id="add-modal-overlay" onclick="closeAddModal(event)" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden opacity-0 transition-opacity duration-300">
+    <div onclick="event.stopPropagation()" id="add-modal-content" class="sheet-modal hidden-sheet w-full max-w-md bg-[#18181b] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <!-- Sheet Handle -->
+      <div class="w-10 h-1 bg-white/20 rounded-full mx-auto sm:hidden mb-2"></div>
 
-    <div class="max-w-3xl mx-auto px-6 relative z-10">
-      <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#1c1c1e] text-[#86868b] text-xs font-medium mb-6">
-        <span class="w-1.5 h-1.5 rounded-full bg-[#30d158]"></span>
-        <span>StopPay 2.0</span>
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white">Новая подписка</h3>
+        <button onclick="closeAddModal()" class="w-7 h-7 rounded-full bg-white/10 text-white/60 hover:text-white flex items-center justify-center text-xs">✕</button>
       </div>
 
-      <h1 class="text-5xl sm:text-7xl font-bold tracking-tight mb-5 apple-title leading-tight">
-        Все подписки.<br>Под контролем.
-      </h1>
-
-      <p class="text-lg sm:text-xl text-[#86868b] max-w-xl mx-auto font-normal leading-relaxed mb-8">
-        Уведомление за 24 часа. Аналитика Apple Card. Отмена в один тап.
-      </p>
-
-      <div class="flex items-center justify-center gap-3">
-        <a href="https://t.me/" target="_blank" class="bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium px-6 py-2.5 rounded-full text-sm transition">
-          Запустить бесплатно
-        </a>
-        <a href="#demo" class="bg-[#1c1c1e] hover:bg-[#2c2c2e] text-[#f5f5f7] font-medium px-6 py-2.5 rounded-full text-sm border border-white/10 transition">
-          Попробовать ↓
-        </a>
+      <!-- Quick Preset Chips -->
+      <div>
+        <div class="text-[10px] text-[#86868b] uppercase font-bold tracking-wider mb-2">Быстрый выбор</div>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" onclick="applyPreset('Яндекс Плюс', 299, 'RUB', 30, 'https://plus.yandex.ru')" class="text-xs px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/5 text-white/80 transition">Яндекс Плюс</button>
+          <button type="button" onclick="applyPreset('Telegram Premium', 14.99, 'BYN', 30, 'https://telegram.org')" class="text-xs px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/5 text-white/80 transition">TG Premium</button>
+          <button type="button" onclick="applyPreset('Spotify', 19.99, 'PLN', 30, 'https://spotify.com/account')" class="text-xs px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/5 text-white/80 transition">Spotify</button>
+          <button type="button" onclick="applyPreset('Netflix', 14.99, 'USD', 30, 'https://netflix.com/cancel')" class="text-xs px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/5 text-white/80 transition">Netflix</button>
+          <button type="button" onclick="applyPreset('iCloud', 149, 'RUB', 30, 'https://appleid.apple.com')" class="text-xs px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/5 text-white/80 transition">iCloud</button>
+        </div>
       </div>
 
-      <!-- 4 Simple Indicators -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16 pt-8 border-t border-white/[0.08] max-w-2xl mx-auto">
+      <!-- Form -->
+      <form id="add-sub-form" onsubmit="submitNewSub(event)" class="space-y-3">
         <div>
-          <div class="text-2xl font-bold text-white">24ч</div>
-          <div class="text-xs text-[#86868b] mt-0.5">До списания</div>
+          <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1">Название сервиса</label>
+          <input type="text" id="form-name" required placeholder="Например: YouTube Premium" class="w-full bg-[#121214] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#2997ff] transition">
         </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1">Стоимость</label>
+            <input type="number" step="0.01" min="0" id="form-price" required placeholder="299" class="w-full bg-[#121214] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#2997ff] transition">
+          </div>
+          <div>
+            <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1">Валюта</label>
+            <select id="form-currency" class="w-full bg-[#121214] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#2997ff] transition">
+              <option value="RUB">RUB (₽)</option>
+              <option value="BYN">BYN (Br)</option>
+              <option value="USD">USD ($)</option>
+              <option value="PLN">PLN (zł)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1">Период (дней)</label>
+            <select id="form-period" class="w-full bg-[#121214] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#2997ff] transition">
+              <option value="30">Ежемесячно (30 дн.)</option>
+              <option value="365">Ежегодно (365 дн.)</option>
+              <option value="7">Еженедельно (7 дн.)</option>
+              <option value="90">Квартал (90 дн.)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1">Дата оплаты</label>
+            <input type="date" id="form-date" required class="w-full bg-[#121214] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#2997ff] transition">
+          </div>
+        </div>
+
         <div>
-          <div class="text-2xl font-bold text-white">4</div>
-          <div class="text-xs text-[#86868b] mt-0.5">Валюты</div>
+          <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1">Ссылка на отмену (опционально)</label>
+          <input type="url" id="form-url" placeholder="https://service.com/cancel" class="w-full bg-[#121214] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#2997ff] transition">
         </div>
-        <div>
-          <div class="text-2xl font-bold text-white">1 тап</div>
-          <div class="text-xs text-[#86868b] mt-0.5">Для отмены</div>
-        </div>
-        <div>
-          <div class="text-2xl font-bold text-white">0 ₽</div>
-          <div class="text-xs text-[#86868b] mt-0.5">Бесплатно</div>
-        </div>
-      </div>
+
+        <button type="submit" id="submit-btn" class="w-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center space-x-2 mt-2">
+          <span>Сохранить подписку</span>
+        </button>
+      </form>
     </div>
-  </section>
-
-  <!-- Interactive Demo Mockup (Clean & Focused) -->
-  <section id="demo" class="py-12 px-6">
-    <div class="max-w-xl mx-auto">
-      <div class="apple-card rounded-3xl overflow-hidden shadow-2xl">
-        <!-- Tab Bar -->
-        <div class="bg-[#18181b] px-5 py-3 border-b border-white/[0.08] flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <span class="text-base text-white"></span>
-            <span class="font-semibold text-xs text-white">StopPay</span>
-          </div>
-          <div class="flex bg-black/60 p-0.5 rounded-lg text-xs">
-            <button onclick="switchTab('reminder')" id="tab-reminder" class="px-2.5 py-1 rounded-md font-medium transition bg-[#2997ff] text-white">
-              Пуш
-            </button>
-            <button onclick="switchTab('card')" id="tab-card" class="px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white">
-              Карточка
-            </button>
-            <button onclick="switchTab('chart')" id="tab-chart" class="px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white">
-              Аналитика
-            </button>
-          </div>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="p-6 bg-black min-h-[300px] flex items-center justify-center">
-
-          <!-- View 1: Push Reminder -->
-          <div id="view-reminder" class="w-full max-w-sm space-y-3">
-            <div class="bg-[#18181b] border border-white/10 rounded-2xl p-4">
-              <div class="flex justify-between items-center text-[11px] text-[#86868b] mb-2">
-                <span class="font-semibold text-white"> Напоминание</span>
-                <span>Завтра в 10:00</span>
-              </div>
-              <div class="text-sm text-white mb-4">
-                Завтра спишется <span class="font-bold text-[#2997ff]">299 ₽</span> за <b>Яндекс Плюс</b>.
-              </div>
-              <div class="grid grid-cols-2 gap-2 text-xs">
-                <a href="https://plus.yandex.ru" target="_blank" class="py-2 text-center rounded-xl bg-[#262629] text-[#2997ff] font-medium hover:bg-[#323236] transition">
-                  🔗 Отменить
-                </a>
-                <button onclick="simulatePaid(this)" class="py-2 text-center rounded-xl bg-[#2997ff] text-white font-medium hover:bg-[#0077ed] transition">
-                  ✅ Оплачено
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- View 2: Subscription Card -->
-          <div id="view-card" class="hidden w-full max-w-sm">
-            <div class="bg-[#18181b] border border-white/10 rounded-2xl p-4 text-xs font-mono">
-              <div class="flex justify-between items-center font-sans font-semibold text-white text-sm mb-2">
-                <span> Netflix</span>
-                <span class="text-[#30d158] text-xs">● Активна</span>
-              </div>
-              <div class="h-px bg-white/10 mb-2"></div>
-              <div class="space-y-1.5 text-[#86868b]">
-                <div class="flex justify-between"><span>Сумма:</span><span class="text-white font-sans">14.99 $ / месяц</span></div>
-                <div class="flex justify-between"><span>Списание:</span><span class="text-white font-sans">25.10.2026 (через 14 дн.)</span></div>
-                <div class="flex justify-between"><span>Ссылка:</span><span class="text-[#2997ff] font-sans">netflix.com/cancel</span></div>
-              </div>
-              <div class="grid grid-cols-3 gap-1.5 mt-3 pt-2 font-sans border-t border-white/10 text-[11px]">
-                <button class="py-1.5 rounded-lg bg-[#262629] text-white">✏️ Изменить</button>
-                <button class="py-1.5 rounded-lg bg-[#262629] text-white">○ Пауза</button>
-                <button class="py-1.5 rounded-lg bg-[#262629] text-[#ff453a]">✕ Удалить</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- View 3: Donut Analytics -->
-          <div id="view-chart" class="hidden w-full max-w-sm text-center">
-            <div class="bg-[#18181b] border border-white/10 rounded-2xl p-4">
-              <div class="relative w-36 h-36 mx-auto my-1">
-                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
-                  <circle cx="50" cy="50" r="38" stroke="#262629" stroke-width="13" fill="none" />
-                  <circle cx="50" cy="50" r="38" stroke="#2997ff" stroke-width="13" stroke-dasharray="90 240" stroke-dashoffset="0" fill="none" />
-                  <circle cx="50" cy="50" r="38" stroke="#30d158" stroke-width="13" stroke-dasharray="60 240" stroke-dashoffset="-92" fill="none" />
-                  <circle cx="50" cy="50" r="38" stroke="#ff9f0a" stroke-width="13" stroke-dasharray="45 240" stroke-dashoffset="-154" fill="none" />
-                  <circle cx="50" cy="50" r="38" stroke="#bf5af2" stroke-width="13" stroke-dasharray="35 240" stroke-dashoffset="-201" fill="none" />
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span class="text-[8px] font-bold text-[#86868b] tracking-wider">ВСЕГО В ГОД</span>
-                  <span class="text-base font-extrabold text-white">18 400</span>
-                  <span class="text-[9px] text-[#86868b]">₽ (RUB)</span>
-                </div>
-              </div>
-              <div class="grid grid-cols-2 gap-1.5 text-[11px] text-[#86868b] mt-3 pt-2 border-t border-white/10 text-left">
-                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#2997ff]"></span><span class="text-white">Яндекс (39%)</span></div>
-                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#30d158]"></span><span class="text-white">Netflix (26%)</span></div>
-                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#ff9f0a]"></span><span class="text-white">Spotify (19%)</span></div>
-                <div class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#bf5af2]"></span><span class="text-white">YouTube (16%)</span></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Bento Grid (Concise & Easy on the eyes) -->
-  <section id="features" class="py-20 px-6">
-    <div class="max-w-4xl mx-auto">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        <!-- Card 1 -->
-        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
-          <div>
-            <span class="text-[#ff9f0a] text-[11px] font-bold uppercase tracking-wider">Уведомления</span>
-            <h3 class="text-xl font-bold text-white mt-1 mb-2">За 24 часа.</h3>
-            <p class="text-xs text-[#86868b] leading-relaxed">
-              Бот присылает алерт в 10:00 за сутки до списания. Вы всегда успеете отменить ненужный тариф.
-            </p>
-          </div>
-          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-[#30d158]">
-            ● Автоперенос даты при подтверждении
-          </div>
-        </div>
-
-        <!-- Card 2 -->
-        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
-          <div>
-            <span class="text-[#2997ff] text-[11px] font-bold uppercase tracking-wider">Аналитика</span>
-            <h3 class="text-xl font-bold text-white mt-1 mb-2">Apple Card стиль.</h3>
-            <p class="text-xs text-[#86868b] leading-relaxed">
-              Наглядное кольцо расходов с общей суммой на год прямо в центре диаграммы.
-            </p>
-          </div>
-          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-[#2997ff]">
-            ● Прогноз на год и среднее в месяц
-          </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
-          <div>
-            <span class="text-[#bf5af2] text-[11px] font-bold uppercase tracking-wider">Мультивалютность</span>
-            <h3 class="text-xl font-bold text-white mt-1 mb-2">4 валюты.</h3>
-            <p class="text-xs text-[#86868b] leading-relaxed">
-              BYN (Br), RUB (₽), USD ($) и PLN (zł). Автоматический пересчет по биржевым курсам.
-            </p>
-          </div>
-          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-[#86868b] font-mono">
-            BYN ⇄ RUB ⇄ USD ⇄ PLN
-          </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="apple-card rounded-3xl p-6 flex flex-col justify-between">
-          <div>
-            <span class="text-[#30d158] text-[11px] font-bold uppercase tracking-wider">Быстрота</span>
-            <h3 class="text-xl font-bold text-white mt-1 mb-2">Отмена в 1 тап.</h3>
-            <p class="text-xs text-[#86868b] leading-relaxed">
-              Прямая ссылка на страницу управления сервисом в каждом напоминании.
-            </p>
-          </div>
-          <div class="mt-5 pt-3 border-t border-white/5 text-[11px] text-white">
-            ● Яндекс · Spotify · Apple · Netflix
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- Interactive Mini Calculator (Compact & Clean) -->
-  <section id="calculator" class="py-16 px-6 border-t border-white/[0.08]">
-    <div class="max-w-2xl mx-auto">
-      <div class="text-center mb-8">
-        <h2 class="text-xs uppercase font-bold tracking-widest text-[#2997ff] mb-1">Калькулятор</h2>
-        <p class="text-2xl font-bold apple-title">Быстрый расчет трат</p>
-      </div>
-
-      <div class="apple-card rounded-3xl p-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-          <div class="space-y-2">
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
-              <span class="flex items-center space-x-2">
-                <input type="checkbox" checked onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="299">
-                <span>Яндекс Плюс</span>
-              </span>
-              <span class="text-[#86868b]">299 ₽</span>
-            </label>
-
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
-              <span class="flex items-center space-x-2">
-                <input type="checkbox" checked onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="399">
-                <span>Telegram Premium</span>
-              </span>
-              <span class="text-[#86868b]">399 ₽</span>
-            </label>
-
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
-              <span class="flex items-center space-x-2">
-                <input type="checkbox" checked onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="249">
-                <span>Spotify</span>
-              </span>
-              <span class="text-[#86868b]">249 ₽</span>
-            </label>
-
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-[#18181b] border border-white/5 cursor-pointer text-xs">
-              <span class="flex items-center space-x-2">
-                <input type="checkbox" onchange="calc()" class="calc-sub text-[#2997ff] rounded bg-black border-white/20" data-p="799">
-                <span>Netflix</span>
-              </span>
-              <span class="text-[#86868b]">799 ₽</span>
-            </label>
-          </div>
-
-          <div class="text-center p-4 bg-black rounded-2xl border border-white/10">
-            <div class="text-[10px] uppercase font-bold text-[#86868b] tracking-wider mb-1">Итого в год</div>
-            <div id="res-year" class="text-3xl font-extrabold text-white tracking-tight mb-1">11 364 ₽</div>
-            <div id="res-month" class="text-xs text-[#86868b] mb-4">~947 ₽ / мес</div>
-            <a href="https://t.me/" target="_blank" class="block bg-[#0071e3] hover:bg-[#0077ed] text-white py-2 rounded-full text-xs font-medium transition">
-              Начать в Telegram
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Minimal Footer -->
-  <footer class="py-8 border-t border-white/[0.08] text-xs text-[#86868b] text-center px-6">
-    <div class="flex items-center justify-center space-x-2 mb-1">
-      <span class="text-white"> StopPay</span>
-      <span>·</span>
-      <span>Telegram Bot</span>
-    </div>
-    <div class="text-[11px] text-[#6e6e73]">
-      Простота и контроль. Вдохновлено Apple.
-    </div>
-  </footer>
+  </div>
 
   <script>
+    // State
+    const state = {
+      user_id: null,
+      first_name: null,
+      is_demo: false,
+      currency: 'RUB',
+      activeTab: 'analytics',
+      subscriptions: [],
+      metrics: null,
+      rates: { RUB: 1.0, BYN: 29.5, USD: 92.5, PLN: 23.5 }
+    };
+
+    // Color palette for chart rings
+    const APPLE_COLORS = ['#2997ff', '#30d158', '#ff9f0a', '#bf5af2', '#ff375f', '#ffd60a', '#64d2ff'];
+    const CURRENCY_SYMBOLS = { RUB: '₽', BYN: 'Br', USD: '$', PLN: 'zł' };
+
+    // Initialize Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+
+    function initTelegram() {
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        try {
+          tg.setHeaderColor('#000000');
+          tg.setBackgroundColor('#000000');
+          tg.enableClosingConfirmation();
+        } catch(e) {}
+
+        const user = tg.initDataUnsafe?.user;
+        if (user && user.id) {
+          state.user_id = user.id;
+          state.first_name = user.first_name;
+          document.getElementById('user-badge').innerText = user.first_name || 'Личный кабинет';
+        }
+      }
+
+      // If user_id not provided by Telegram, check localStorage or URL query
+      if (!state.user_id) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlId = urlParams.get('user_id');
+        if (urlId) {
+          state.user_id = parseInt(urlId);
+          localStorage.setItem('stoppay_user_id', state.user_id);
+        } else {
+          const stored = localStorage.getItem('stoppay_user_id');
+          if (stored) state.user_id = parseInt(stored);
+        }
+      }
+
+      if (!state.user_id) {
+        state.is_demo = true;
+        document.getElementById('demo-banner').classList.remove('hidden');
+        document.getElementById('user-badge').innerText = 'Демо';
+      }
+
+      // Default date in form: +30 days from today
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 30);
+      document.getElementById('form-date').value = defaultDate.toISOString().split('T')[0];
+
+      loadData();
+    }
+
+    // Dynamic Island Toast Helper
+    function showToast(msg, icon = '✓') {
+      const toast = document.getElementById('dynamic-toast');
+      document.getElementById('toast-message').innerText = msg;
+      document.getElementById('toast-icon').innerText = icon;
+      toast.classList.remove('toast-hidden');
+
+      if (tg?.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('success');
+      }
+
+      setTimeout(() => {
+        toast.classList.add('toast-hidden');
+      }, 2400);
+    }
+
+    // Tab Switching
     function switchTab(tab) {
-      document.getElementById('view-reminder').classList.add('hidden');
-      document.getElementById('view-card').classList.add('hidden');
-      document.getElementById('view-chart').classList.add('hidden');
+      state.activeTab = tab;
+      const vAnalytics = document.getElementById('view-analytics');
+      const vSubs = document.getElementById('view-subscriptions');
+      const nAnalytics = document.getElementById('nav-analytics');
+      const nSubs = document.getElementById('nav-subscriptions');
 
-      document.getElementById('tab-reminder').className = 'px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white';
-      document.getElementById('tab-card').className = 'px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white';
-      document.getElementById('tab-chart').className = 'px-2.5 py-1 rounded-md font-medium transition text-[#86868b] hover:text-white';
+      if (tab === 'analytics') {
+        vAnalytics.classList.remove('hidden');
+        vSubs.classList.add('hidden');
+        nAnalytics.className = 'flex-1 flex flex-col items-center py-1.5 rounded-full transition text-white bg-white/10 font-medium';
+        nSubs.className = 'flex-1 flex flex-col items-center py-1.5 rounded-full transition text-white/50 hover:text-white font-medium';
+      } else {
+        vAnalytics.classList.add('hidden');
+        vSubs.classList.remove('hidden');
+        nSubs.className = 'flex-1 flex flex-col items-center py-1.5 rounded-full transition text-white bg-white/10 font-medium';
+        nAnalytics.className = 'flex-1 flex flex-col items-center py-1.5 rounded-full transition text-white/50 hover:text-white font-medium';
+      }
 
-      document.getElementById('view-' + tab).classList.remove('hidden');
-      document.getElementById('tab-' + tab).className = 'px-2.5 py-1 rounded-md font-medium transition bg-[#2997ff] text-white';
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
 
-    function simulatePaid(btn) {
-      btn.innerText = '✓ Оплачено';
-      btn.className = 'py-2 text-center rounded-xl bg-[#30d158] text-black font-semibold transition';
-    }
-
-    function calc() {
-      let sum = 0;
-      document.querySelectorAll('.calc-sub').forEach(cb => {
-        if (cb.checked) sum += parseFloat(cb.dataset.p);
+    // Currency Switch
+    function changeCurrency(curr) {
+      state.currency = curr;
+      document.querySelectorAll('.curr-pill').forEach(btn => {
+        btn.className = 'curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white';
       });
-      document.getElementById('res-year').innerText = (sum * 12).toLocaleString('ru-RU') + ' ₽';
-      document.getElementById('res-month').innerText = '~' + Math.round(sum).toLocaleString('ru-RU') + ' ₽ / мес';
+      const activeBtn = document.getElementById('curr-btn-' + curr);
+      if (activeBtn) {
+        activeBtn.className = 'curr-pill px-2.5 py-1 rounded-lg transition bg-white/15 text-white font-semibold';
+      }
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+      loadData();
     }
+
+    // Fetch data from backend
+    async function loadData() {
+      try {
+        let url = `/api/subscriptions?currency=${state.currency}`;
+        if (state.user_id) {
+          url += `&user_id=${state.user_id}`;
+        }
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.status === 'ok') {
+          state.subscriptions = data.subscriptions || [];
+          state.metrics = data.metrics || null;
+          renderUI();
+        }
+      } catch (e) {
+        console.error('Error fetching subscriptions:', e);
+      }
+    }
+
+    // Render all components
+    function renderUI() {
+      renderDonutChart();
+      renderMonthlyBars();
+      renderSubscriptionsList();
+    }
+
+    // Format number with spaces
+    function fmt(num) {
+      return Math.round(num).toLocaleString('ru-RU');
+    }
+
+    // Render Donut Chart
+    function renderDonutChart() {
+      const sym = CURRENCY_SYMBOLS[state.currency] || state.currency;
+      const g = document.getElementById('donut-segments');
+      const breakdownEl = document.getElementById('services-breakdown');
+      g.innerHTML = '';
+      breakdownEl.innerHTML = '';
+
+      if (!state.metrics || state.metrics.services_count === 0) {
+        document.getElementById('chart-total-amount').innerText = `0 ${sym}`;
+        document.getElementById('chart-monthly-avg').innerText = `~0 ${sym} / мес`;
+        document.getElementById('chart-services-badge').innerText = '0 активных';
+        breakdownEl.innerHTML = '<div class="col-span-2 text-center text-[#86868b] py-2">Нет активных подписок</div>';
+        return;
+      }
+
+      const total = state.metrics.total_annual;
+      const monthly = state.metrics.monthly_avg;
+      const count = state.metrics.services_count;
+      const services = state.metrics.services;
+
+      document.getElementById('chart-total-amount').innerText = `${fmt(total)} ${sym}`;
+      document.getElementById('chart-monthly-avg').innerText = `~${fmt(monthly)} ${sym} / мес`;
+      document.getElementById('chart-services-badge').innerText = `${count} ${pluralizeSubs(count)}`;
+
+      const r = 62;
+      const circumference = 2 * Math.PI * r; // ~389.56
+      let currentOffset = 0;
+
+      services.forEach((s, idx) => {
+        const color = APPLE_COLORS[idx % APPLE_COLORS.length];
+        const fraction = total > 0 ? (s.annual_cost / total) : 0;
+        const dashLength = fraction * circumference;
+        const gapLength = circumference - dashLength;
+        const pct = Math.round(fraction * 100);
+
+        // SVG circle segment
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '80');
+        circle.setAttribute('cy', '80');
+        circle.setAttribute('r', r.toString());
+        circle.setAttribute('stroke', color);
+        circle.setAttribute('stroke-width', '14');
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke-dasharray', `${dashLength} ${gapLength}`);
+        circle.setAttribute('stroke-dashoffset', (-currentOffset).toString());
+        circle.setAttribute('class', 'donut-slice');
+        g.appendChild(circle);
+
+        currentOffset += dashLength;
+
+        // Breakdown pill
+        const pill = document.createElement('div');
+        pill.className = 'flex items-center space-x-2 bg-white/[0.03] p-2 rounded-xl border border-white/[0.04]';
+        pill.innerHTML = `
+          <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${color}"></span>
+          <div class="truncate flex-1">
+            <div class="text-white font-medium truncate">${s.name}</div>
+            <div class="text-[10px] text-[#86868b]">${fmt(s.annual_cost)} ${sym}/год (${pct}%)</div>
+          </div>
+        `;
+        breakdownEl.appendChild(pill);
+      });
+    }
+
+    function pluralizeSubs(n) {
+      if (n % 10 === 1 && n % 100 !== 11) return 'подписка';
+      if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return 'подписки';
+      return 'подписок';
+    }
+
+    // Render Monthly Health/Activity Spend Bars
+    function renderMonthlyBars() {
+      const container = document.getElementById('monthly-bars');
+      container.innerHTML = '';
+      const sym = CURRENCY_SYMBOLS[state.currency] || state.currency;
+      const baseMonthly = state.metrics ? state.metrics.monthly_avg : 0;
+
+      const currentMonth = new Date().getMonth(); // 0-11
+
+      for (let m = 0; m < 12; m++) {
+        const isCurrent = m === currentMonth;
+        const factor = baseMonthly > 0 ? (0.92 + ((m * 3) % 17) / 100) : 0.05;
+        const val = baseMonthly * factor;
+        const heightPct = baseMonthly > 0 ? Math.min(100, Math.max(15, (factor / 1.1) * 90)) : 10;
+
+        const col = document.createElement('div');
+        col.className = 'flex-1 h-full flex items-end justify-center group relative cursor-pointer';
+        
+        const barColor = isCurrent ? 'bg-[#2997ff] shadow-[0_0_12px_rgba(41,151,255,0.6)]' : 'bg-[#262629] hover:bg-white/30';
+
+        col.innerHTML = `
+          <div class="w-full ${barColor} rounded-full transition-all duration-300" style="height: ${heightPct}%"></div>
+          <div class="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1c1c1e] text-[10px] px-1.5 py-0.5 rounded border border-white/10 pointer-events-none whitespace-nowrap z-20">
+            ${fmt(val)} ${sym}
+          </div>
+        `;
+        container.appendChild(col);
+      }
+    }
+
+    // Render Subscriptions List
+    function renderSubscriptionsList() {
+      const container = document.getElementById('subs-list-container');
+      container.innerHTML = '';
+
+      if (state.subscriptions.length === 0) {
+        container.innerHTML = `
+          <div class="apple-card rounded-2xl p-8 text-center space-y-3">
+            <span class="text-3xl">📭</span>
+            <div class="text-sm font-semibold text-white">Список подписок пуст</div>
+            <div class="text-xs text-[#86868b] max-w-xs mx-auto">Добавьте свои сервисы, чтобы бот предупреждал вас за 24 часа до списания.</div>
+            <button onclick="openAddModal()" class="bg-[#0071e3] text-white text-xs px-4 py-2 rounded-full font-medium transition mt-2">
+              ＋ Добавить подписку
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      state.subscriptions.forEach(sub => {
+        const sym = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
+        const isActive = sub.is_active;
+        const card = document.createElement('div');
+        card.className = `apple-card rounded-2xl p-4 transition ${isActive ? '' : 'opacity-60'}`;
+
+        let daysNotice = '';
+        if (sub.next_billing_date) {
+          const bDate = new Date(sub.next_billing_date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          bDate.setHours(0, 0, 0, 0);
+          const diffDays = Math.round((bDate - today) / (1000 * 60 * 60 * 24));
+
+          const dateStr = bDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+          if (diffDays < 0) {
+            daysNotice = `<span class="text-[#ff453a] font-medium">${dateStr} (просрочено)</span>`;
+          } else if (diffDays === 0) {
+            daysNotice = `<span class="text-[#ff9f0a] font-bold animate-pulse">Сегодня!</span>`;
+          } else if (diffDays <= 3) {
+            daysNotice = `<span class="text-[#ff9f0a] font-medium">${dateStr} (через ${diffDays} дн.)</span>`;
+          } else {
+            daysNotice = `<span class="text-[#86868b]">${dateStr} (через ${diffDays} дн.)</span>`;
+          }
+        }
+
+        const cancelBtn = sub.cancel_url
+          ? `<a href="${sub.cancel_url}" target="_blank" class="text-[11px] text-[#2997ff] hover:underline flex items-center space-x-0.5"><span>↗ Отменить</span></a>`
+          : '';
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3 truncate">
+              <div class="w-10 h-10 rounded-xl bg-[#1c1c1e] border border-white/10 flex items-center justify-center text-base font-bold text-white flex-shrink-0">
+                ${sub.service_name.charAt(0).toUpperCase()}
+              </div>
+              <div class="truncate">
+                <div class="text-sm font-semibold text-white truncate flex items-center space-x-1.5">
+                  <span>${sub.service_name}</span>
+                  ${sub.cancel_url ? cancelBtn : ''}
+                </div>
+                <div class="text-[11px] mt-0.5">
+                  ${daysNotice}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 flex-shrink-0">
+              <div class="text-right">
+                <div class="text-sm font-bold text-white">${sub.price} ${sym}</div>
+                <div class="text-[10px] text-[#86868b]">${sub.period_days} дн.</div>
+              </div>
+
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleSub(${sub.id}, this)" class="sr-only peer">
+                <div class="w-11 h-6 bg-[#262629] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#30d158]"></div>
+              </label>
+
+              <button onclick="deleteSub(${sub.id})" class="w-7 h-7 rounded-full bg-white/5 hover:bg-[#ff453a]/20 text-[#86868b] hover:text-[#ff453a] flex items-center justify-center transition text-xs">
+                ✕
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function toggleSub(subId, checkbox) {
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+      const sub = state.subscriptions.find(s => s.id === subId);
+      if (sub) {
+        sub.is_active = checkbox.checked;
+        showToast(checkbox.checked ? 'Подписка активирована' : 'Подписка на паузе');
+      }
+
+      if (state.is_demo) {
+        recalculateDemoMetrics();
+        renderUI();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/subscriptions/${subId}/toggle`, { method: 'POST' });
+        const resData = await res.json();
+        if (resData.status === 'ok') {
+          loadData();
+        }
+      } catch (e) {
+        console.error('Failed to toggle:', e);
+      }
+    }
+
+    async function deleteSub(subId) {
+      if (!confirm('Удалить эту подписку?')) return;
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+
+      state.subscriptions = state.subscriptions.filter(s => s.id !== subId);
+      showToast('Подписка удалена');
+
+      if (state.is_demo) {
+        recalculateDemoMetrics();
+        renderUI();
+        return;
+      }
+
+      try {
+        await fetch(`/api/subscriptions/${subId}`, { method: 'DELETE' });
+        loadData();
+      } catch (e) {
+        console.error('Failed to delete:', e);
+      }
+    }
+
+    function recalculateDemoMetrics() {
+      const active = state.subscriptions.filter(s => s.is_active);
+      let totalAnnual = 0;
+      const services = [];
+
+      active.forEach(s => {
+        const fromRate = state.rates[s.currency] || 1.0;
+        const toRate = state.rates[state.currency] || 1.0;
+        const rawAnnual = (365 / s.period_days) * s.price;
+        const convertedAnnual = (rawAnnual * fromRate) / toRate;
+        totalAnnual += convertedAnnual;
+        services.push({
+          name: s.service_name,
+          annual_cost: convertedAnnual,
+          monthly_cost: convertedAnnual / 12,
+        });
+      });
+
+      services.sort((a, b) => b.annual_cost - a.annual_cost);
+      state.metrics = {
+        total_annual: totalAnnual,
+        monthly_avg: totalAnnual / 12,
+        services_count: active.length,
+        target_currency: state.currency,
+        services: services
+      };
+    }
+
+    function openAddModal() {
+      const overlay = document.getElementById('add-modal-overlay');
+      const content = document.getElementById('add-modal-content');
+      overlay.classList.remove('hidden');
+      setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        content.classList.remove('hidden-sheet');
+      }, 10);
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function closeAddModal(e) {
+      if (e && e.target !== e.currentTarget && e.target.tagName !== 'BUTTON') return;
+      const overlay = document.getElementById('add-modal-overlay');
+      const content = document.getElementById('add-modal-content');
+      content.classList.add('hidden-sheet');
+      overlay.classList.add('opacity-0');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+      }, 300);
+    }
+
+    function applyPreset(name, price, curr, period, url) {
+      document.getElementById('form-name').value = name;
+      document.getElementById('form-price').value = price;
+      document.getElementById('form-currency').value = curr;
+      document.getElementById('form-period').value = period;
+      document.getElementById('form-url').value = url;
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    async function submitNewSub(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerText = 'Сохранение...';
+
+      const payload = {
+        user_id: state.user_id || 100001,
+        username: state.first_name || 'User',
+        service_name: document.getElementById('form-name').value.trim(),
+        price: parseFloat(document.getElementById('form-price').value),
+        currency: document.getElementById('form-currency').value,
+        period_days: parseInt(document.getElementById('form-period').value),
+        next_billing_date: document.getElementById('form-date').value,
+        cancel_url: document.getElementById('form-url').value.trim() || null,
+      };
+
+      if (state.is_demo) {
+        payload.id = Date.now();
+        payload.is_active = true;
+        state.subscriptions.unshift(payload);
+        recalculateDemoMetrics();
+        renderUI();
+        showToast('Подписка добавлена');
+        closeAddModal();
+        btn.disabled = false;
+        btn.innerText = 'Сохранить подписку';
+        document.getElementById('add-sub-form').reset();
+        switchTab('subscriptions');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const resData = await res.json();
+        if (resData.status === 'ok') {
+          showToast('Подписка сохранена');
+          closeAddModal();
+          document.getElementById('add-sub-form').reset();
+          await loadData();
+          switchTab('subscriptions');
+        } else {
+          alert('Ошибка: ' + (resData.message || 'Не удалось сохранить'));
+        }
+      } catch (err) {
+        alert('Ошибка связи с сервером');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Сохранить подписку';
+      }
+    }
+
+    function promptUserId() {
+      const id = prompt('Введите ваш Telegram User ID (можно узнать через @userinfobot):');
+      if (id && !isNaN(parseInt(id))) {
+        state.user_id = parseInt(id);
+        state.is_demo = false;
+        localStorage.setItem('stoppay_user_id', state.user_id);
+        document.getElementById('demo-banner').classList.add('hidden');
+        document.getElementById('user-badge').innerText = `ID: ${state.user_id}`;
+        loadData();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initTelegram);
   </script>
 </body>
 </html>

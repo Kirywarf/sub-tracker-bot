@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from aiohttp import web
 from config import normalize_db_url, Settings
 from main import health_check, start_health_server
@@ -55,3 +55,42 @@ async def test_health_check_endpoint():
     finally:
         await client.close()
         await runner.cleanup()
+
+
+@pytest.mark.asyncio
+async def test_webapp_endpoints():
+    from main import serve_index, api_get_subscriptions, cors_middleware
+    app = web.Application(middlewares=[cors_middleware])
+    app.router.add_get('/', serve_index)
+    app.router.add_get('/app', serve_index)
+    app.router.add_get('/api/subscriptions', api_get_subscriptions)
+
+    from aiohttp.test_utils import TestClient, TestServer
+    server = TestServer(app)
+    client = TestClient(server)
+    await client.start_server()
+
+    try:
+        # 1. Test HTML serve
+        resp = await client.get('/')
+        assert resp.status == 200
+        text = await resp.text()
+        assert "StopPay" in text
+
+        # 2. Test JSON header on /
+        resp_json = await client.get('/', headers={"Accept": "application/json"})
+        assert resp_json.status == 200
+        data_json = await resp_json.json()
+        assert data_json["status"] == "ok"
+
+        # 3. Test demo subscriptions API
+        resp_api = await client.get('/api/subscriptions?currency=RUB')
+        assert resp_api.status == 200
+        api_data = await resp_api.json()
+        assert api_data["status"] == "ok"
+        assert api_data["is_demo"] is True
+        assert len(api_data["subscriptions"]) > 0
+        assert "metrics" in api_data
+        assert api_data["metrics"]["total_annual"] > 0
+    finally:
+        await client.close()
