@@ -292,6 +292,16 @@ async def main() -> None:
         logger.info(f"Telegram Webhook configured: {webhook_url}")
 
         try:
+            from aiogram.types import BotCommand
+            await bot.set_my_commands([
+                BotCommand(command="start", description=" Открыть StopPay"),
+                BotCommand(command="help", description="ℹ️ Справка и руководство"),
+            ])
+            logger.info("Telegram commands menu configured: /start, /help")
+        except Exception as cmd_err:
+            logger.warning(f"Could not set bot commands: {cmd_err}")
+
+        try:
             from aiogram.types import MenuButtonWebApp, WebAppInfo
             await bot.set_chat_menu_button(
                 menu_button=MenuButtonWebApp(
@@ -331,6 +341,16 @@ async def main() -> None:
             health_runner = await start_health_server(settings.PORT)
 
         try:
+            try:
+                from aiogram.types import BotCommand
+                await bot.set_my_commands([
+                    BotCommand(command="start", description=" Открыть StopPay"),
+                    BotCommand(command="help", description="ℹ️ Справка и руководство"),
+                ])
+                logger.info("Telegram commands menu configured: /start, /help")
+            except Exception as cmd_err:
+                logger.warning(f"Could not set bot commands: {cmd_err}")
+
             if settings.WEBAPP_URL:
                 try:
                     from aiogram.types import MenuButtonWebApp, WebAppInfo
