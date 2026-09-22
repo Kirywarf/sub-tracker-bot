@@ -5,18 +5,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.models import User, Subscription
 
 
+from sqlalchemy.orm import selectinload
+
+
 async def get_or_create_user(
     session: AsyncSession,
     telegram_id: int,
     username: Optional[str] = None,
     timezone: str = "UTC+3",
+    language: str = "ru",
 ) -> User:
     query = select(User).where(User.telegram_id == telegram_id)
     result = await session.execute(query)
     user = result.scalar_one_or_none()
 
     if not user:
-        user = User(telegram_id=telegram_id, username=username, timezone=timezone)
+        user = User(telegram_id=telegram_id, username=username, timezone=timezone, language=language)
         session.add(user)
         await session.commit()
         await session.refresh(user)
@@ -26,6 +30,31 @@ async def get_or_create_user(
         await session.refresh(user)
 
     return user
+
+
+async def update_user_language(
+    session: AsyncSession,
+    telegram_id: int,
+    language: str,
+) -> Optional[User]:
+    query = select(User).where(User.telegram_id == telegram_id)
+    result = await session.execute(query)
+    user = result.scalar_one_or_none()
+    if user:
+        user.language = language
+        await session.commit()
+        await session.refresh(user)
+    return user
+
+
+async def get_user_language(
+    session: AsyncSession,
+    telegram_id: int,
+) -> str:
+    query = select(User.language).where(User.telegram_id == telegram_id)
+    result = await session.execute(query)
+    lang = result.scalar_one_or_none()
+    return lang or "ru"
 
 
 async def update_user_timezone(
@@ -161,6 +190,7 @@ async def get_subscriptions_due_for_reminder(
 ) -> List[Subscription]:
     query = (
         select(Subscription)
+        .options(selectinload(Subscription.user))
         .where(
             Subscription.is_active.is_(True),
             Subscription.next_billing_date == target_date,

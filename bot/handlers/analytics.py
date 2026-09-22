@@ -117,7 +117,10 @@ def calculate_unified_metrics(
     }
 
 
-def format_analytics_caption(metrics: Dict[str, Any]) -> str:
+from bot.locales import get_text
+
+
+def format_analytics_caption(metrics: Dict[str, Any], lang: str = "ru") -> str:
     """
     Generates an Apple Card-style readable HTML report caption for the analytics photo.
     """
@@ -125,22 +128,26 @@ def format_analytics_caption(metrics: Dict[str, Any]) -> str:
     curr_sym = CURRENCY_DISPLAY.get(target_curr, target_curr)
 
     if target_curr == "BYN":
-        header_curr = "Все расходы приведены к: Br (BYN)"
+        header_curr = get_text("analytics_all_converted", lang, curr="Br (BYN)")
     else:
-        header_curr = f"Все расходы приведены к: {curr_sym} ({target_curr})"
+        header_curr = get_text("analytics_all_converted", lang, curr=f"{curr_sym} ({target_curr})")
+
+    year_str = f"{metrics['total_annual']:,.0f}"
+    month_str = f"{metrics['monthly_avg']:,.0f}"
 
     text_blocks = [
-        " <b>Аналитика регулярных расходов</b>",
+        get_text("analytics_title", lang),
         f"<i>{header_curr}</i>\n",
-        f"• В год: <b>{metrics['total_annual']:,.0f} {curr_sym}</b>",
-        f"• В месяц: <b>{metrics['monthly_avg']:,.0f} {curr_sym}</b>",
-        f"• Подписок: <b>{metrics['services_count']}</b>\n",
+        get_text("analytics_in_year", lang, amount=year_str, curr=curr_sym),
+        get_text("analytics_in_month", lang, amount=month_str, curr=curr_sym),
+        get_text("analytics_subs_count", lang, count=metrics["services_count"]) + "\n",
     ]
 
     if metrics["services_count"] > 0:
-        text_blocks.append("<b>Топ затратных сервисов:</b>")
+        text_blocks.append(get_text("analytics_top_title", lang))
         from collections import Counter
         name_counts = Counter(s.get("name", "") for s in metrics.get("services", []))
+        yr_short = get_text("analytics_year_short", lang)
 
         for idx, s in enumerate(metrics["top_services"], 1):
             service_title = s['name']
@@ -148,12 +155,12 @@ def format_analytics_caption(metrics: Dict[str, Any]) -> str:
                 service_title = f"{s['name']} ({s['original_currency']})"
 
             text_blocks.append(
-                f"{idx}. <b>{service_title}</b> — {s['annual_cost']:,.0f} {curr_sym}/год"
+                f"{idx}. <b>{service_title}</b> — {s['annual_cost']:,.0f} {curr_sym}{yr_short}"
             )
         text_blocks.append("")
 
     if metrics["has_multiple_currencies"]:
-        text_blocks.append("<i>Валюту можно переключить ниже:</i>")
+        text_blocks.append(get_text("analytics_switch_hint", lang))
 
     return "\n".join(text_blocks).strip()
 
@@ -163,16 +170,14 @@ from bot.utils.cleaner import send_clean_message, send_clean_photo
 
 
 @router.message(Command("analytics"))
-@router.message(F.text == "📊 Аналитика")
-async def show_analytics(message: Message, session: AsyncSession) -> None:
+@router.message(F.text.in_({"📊 Аналитика", "📊 Аналітыка", "📊 Analytics", "📊 Analityka"}))
+async def show_analytics(message: Message, session: AsyncSession, user_lang: str = "ru") -> None:
     subs = await get_user_subscriptions(session, message.from_user.id, active_only=True)
 
     if not subs:
         await send_clean_message(
             message,
-            " <b>Аналитика расходов</b>\n\n"
-            "У вас пока нет активных подписок.\n"
-            "Добавьте подписку, и здесь появится аналитика.",
+            get_text("analytics_empty", user_lang),
             parse_mode="HTML",
         )
         return
@@ -186,8 +191,8 @@ async def show_analytics(message: Message, session: AsyncSession) -> None:
     chart_bytes = chart_buf.read()
     input_file = BufferedInputFile(chart_bytes, filename="analytics.png")
 
-    caption_text = format_analytics_caption(metrics)
-    reply_markup = get_analytics_currency_keyboard(target_curr, user_id=message.from_user.id)
+    caption_text = format_analytics_caption(metrics, lang=user_lang)
+    reply_markup = get_analytics_currency_keyboard(target_curr, user_id=message.from_user.id, lang=user_lang)
 
     await send_clean_photo(
         message,
@@ -199,12 +204,12 @@ async def show_analytics(message: Message, session: AsyncSession) -> None:
 
 
 @router.callback_query(F.data.startswith("analytics_curr_"))
-async def cb_switch_analytics_currency(callback: CallbackQuery, session: AsyncSession) -> None:
+async def cb_switch_analytics_currency(callback: CallbackQuery, session: AsyncSession, user_lang: str = "ru") -> None:
     target_curr = callback.data.split("_")[-1].upper()
     subs = await get_user_subscriptions(session, callback.from_user.id, active_only=True)
 
     if not subs:
-        await callback.answer("Нет активных подписок для анализа", show_alert=True)
+        await callback.answer(get_text("analytics_no_active_alert", user_lang), show_alert=True)
         return
 
     rates = await get_exchange_rates()
@@ -214,8 +219,8 @@ async def cb_switch_analytics_currency(callback: CallbackQuery, session: AsyncSe
     chart_bytes = chart_buf.read()
     input_file = BufferedInputFile(chart_bytes, filename="analytics.png")
 
-    caption_text = format_analytics_caption(metrics)
-    reply_markup = get_analytics_currency_keyboard(target_curr, user_id=callback.from_user.id)
+    caption_text = format_analytics_caption(metrics, lang=user_lang)
+    reply_markup = get_analytics_currency_keyboard(target_curr, user_id=callback.from_user.id, lang=user_lang)
 
     media = InputMediaPhoto(media=input_file, caption=caption_text, parse_mode="HTML")
     try:
@@ -225,5 +230,5 @@ async def cb_switch_analytics_currency(callback: CallbackQuery, session: AsyncSe
         logger.debug(f"Ignored edit_media error (likely identical content): {e}")
 
     curr_sym = CURRENCY_DISPLAY.get(target_curr, target_curr)
-    await callback.answer(f"Переключено на {curr_sym} ({target_curr})")
+    await callback.answer(get_text("analytics_switched_alert", user_lang, curr=f"{curr_sym} ({target_curr})"))
 

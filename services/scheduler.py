@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from config import settings
 from database.requests import get_subscriptions_due_for_reminder
+from bot.locales import get_text
 
 logger = logging.getLogger(__name__)
 
@@ -22,18 +23,18 @@ CURRENCY_SYMBOLS = {
 }
 
 
-def build_reminder_keyboard(sub_id: int, cancel_url: Optional[str]) -> InlineKeyboardMarkup:
+def build_reminder_keyboard(sub_id: int, cancel_url: Optional[str], lang: str = "ru") -> InlineKeyboardMarkup:
     buttons = []
     if cancel_url:
-        buttons.append([InlineKeyboardButton(text="🔗 Отменить подписку", url=cancel_url)])
-    buttons.append([InlineKeyboardButton(text="✅ Отметить оплаченным", callback_data=f"paid_{sub_id}")])
+        buttons.append([InlineKeyboardButton(text=get_text("btn_reminder_cancel", lang), url=cancel_url)])
+    buttons.append([InlineKeyboardButton(text=get_text("btn_mark_paid", lang), callback_data=f"paid_{sub_id}")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 async def check_and_send_reminders(bot: Bot, session_factory: async_sessionmaker[AsyncSession]) -> int:
     """
     Checks for subscriptions whose next_billing_date is tomorrow (current_date + 1 day),
-    and sends notification messages to users.
+    and sends notification messages to users in their preferred language.
     Returns the count of successfully sent reminders.
     """
     tomorrow = date.today() + timedelta(days=1)
@@ -48,12 +49,9 @@ async def check_and_send_reminders(bot: Bot, session_factory: async_sessionmaker
         curr_symbol = CURRENCY_SYMBOLS.get(sub.currency, sub.currency)
         price_display = f"{sub.price:g} {curr_symbol}" if sub.price.is_integer() else f"{sub.price:.2f} {curr_symbol}"
 
-        text = (
-            " <b>Напоминание о списании!</b>\n"
-            f"Завтра: <b>{price_display}</b> · <b>{sub.service_name}</b>"
-        )
-
-        kb = build_reminder_keyboard(sub.id, sub.cancel_url)
+        user_lang = getattr(sub.user, "language", "ru") if getattr(sub, "user", None) else "ru"
+        text = get_text("reminder_alert", user_lang, price=price_display, service=sub.service_name)
+        kb = build_reminder_keyboard(sub.id, sub.cancel_url, lang=user_lang)
 
         try:
             await bot.send_message(
@@ -63,7 +61,7 @@ async def check_and_send_reminders(bot: Bot, session_factory: async_sessionmaker
                 reply_markup=kb,
             )
             sent_count += 1
-            logger.info(f"Sent reminder for subscription #{sub.id} to user {sub.user_id}")
+            logger.info(f"Sent reminder for subscription #{sub.id} to user {sub.user_id} in '{user_lang}'")
         except TelegramAPIError as e:
             logger.warning(f"Failed to send reminder to user {sub.user_id} for sub #{sub.id}: {e}")
         except Exception as e:

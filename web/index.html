@@ -299,19 +299,27 @@
       </div>
     </div>
 
-    <!-- Header Actions: Sound Toggle + Currency Switcher -->
-    <div class="flex items-center space-x-2">
+    <!-- Header Actions: Sound Toggle + Language Switcher + Currency Switcher -->
+    <div class="flex items-center space-x-1.5 sm:space-x-2">
       <!-- Sound FX Toggle -->
-      <button onclick="toggleSound()" id="sound-toggle-btn" title="Звук интерфейса" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-sm text-white/70 transition active:scale-95">
+      <button onclick="toggleSound()" id="sound-toggle-btn" title="Sound" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-sm text-white/70 transition active:scale-95">
         <span id="sound-icon">🔊</span>
       </button>
 
+      <!-- Language Selector Glass Bar -->
+      <div class="flex items-center bg-[#1c1c1e]/90 p-0.5 rounded-xl border border-white/10 text-[10px] font-medium shadow-inner">
+        <button onclick="changeLanguage('ru')" id="lang-btn-ru" class="lang-pill px-1.5 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm">RU</button>
+        <button onclick="changeLanguage('be')" id="lang-btn-be" class="lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white">BE</button>
+        <button onclick="changeLanguage('en')" id="lang-btn-en" class="lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white">EN</button>
+        <button onclick="changeLanguage('pl')" id="lang-btn-pl" class="lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white">PL</button>
+      </div>
+
       <!-- Currency Selector Segmented Glass Bar -->
       <div class="flex items-center bg-[#1c1c1e]/90 p-0.5 rounded-xl border border-white/10 text-[11px] font-medium shadow-inner">
-        <button onclick="changeCurrency('RUB')" id="curr-btn-RUB" class="curr-pill px-2.5 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm">₽</button>
-        <button onclick="changeCurrency('BYN')" id="curr-btn-BYN" class="curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white">Br</button>
-        <button onclick="changeCurrency('USD')" id="curr-btn-USD" class="curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white">$</button>
-        <button onclick="changeCurrency('PLN')" id="curr-btn-PLN" class="curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white">zł</button>
+        <button onclick="changeCurrency('RUB')" id="curr-btn-RUB" class="curr-pill px-2 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm">₽</button>
+        <button onclick="changeCurrency('BYN')" id="curr-btn-BYN" class="curr-pill px-2 py-1 rounded-lg transition text-white/50 hover:text-white">Br</button>
+        <button onclick="changeCurrency('USD')" id="curr-btn-USD" class="curr-pill px-2 py-1 rounded-lg transition text-white/50 hover:text-white">$</button>
+        <button onclick="changeCurrency('PLN')" id="curr-btn-PLN" class="curr-pill px-2 py-1 rounded-lg transition text-white/50 hover:text-white">zł</button>
       </div>
     </div>
   </header>
@@ -328,12 +336,12 @@
 
         <div class="relative z-10">
           <div class="flex items-center justify-between mb-2 px-1">
-            <div class="text-[10px] font-bold text-[#86868b] tracking-[0.2em] uppercase">
+            <div id="i18n-annual-spend-title" class="text-[10px] font-bold text-[#86868b] tracking-[0.2em] uppercase">
               В С Е Г О   В   Г О Д
             </div>
             <div class="flex items-center space-x-1.5 text-[10px] font-medium text-[#30d158] bg-[#30d158]/10 px-2 py-0.5 rounded-full border border-[#30d158]/25">
               <span class="w-1.5 h-1.5 rounded-full bg-[#30d158] radar-pulse"></span>
-              <span>Активно</span>
+              <span id="i18n-active-badge">Активно</span>
             </div>
           </div>
 
@@ -371,11 +379,11 @@
         <div class="relative z-10">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="text-[10px] font-bold text-[#86868b] tracking-wider uppercase">Календарь списаний</div>
+              <div id="i18n-calendar-title" class="text-[10px] font-bold text-[#86868b] tracking-wider uppercase">Календарь списаний</div>
               <div id="monthly-forecast-title" class="text-sm font-bold text-white">В этом месяце: 0 ₽</div>
             </div>
             <span id="monthly-forecast-badge" class="text-xs font-semibold text-[#30d158] bg-[#30d158]/10 border border-[#30d158]/20 px-2.5 py-0.5 rounded-full flex items-center space-x-1">
-              <span>В норме</span>
+              <span id="i18n-normal-badge">В норме</span>
             </span>
           </div>
 
@@ -393,12 +401,12 @@
     <section id="view-subscriptions" class="hidden space-y-3">
       <div class="flex items-center justify-between px-1">
         <div>
-          <div class="text-[10px] font-bold text-[#86868b] tracking-wider uppercase">Управление</div>
-          <h2 class="text-base font-bold text-white">Ваши подписки</h2>
+          <div id="i18n-manage-title" class="text-[10px] font-bold text-[#86868b] tracking-wider uppercase">Управление</div>
+          <h2 id="i18n-your-subs-title" class="text-base font-bold text-white">Ваши подписки</h2>
         </div>
         <button onclick="openAddModal(event)" class="flex items-center space-x-1.5 text-xs font-semibold text-white bg-[#0071e3] hover:bg-[#0077ed] px-3.5 py-1.5 rounded-full transition shadow-md active:scale-95">
           <span class="text-base leading-none">＋</span>
-          <span>Добавить</span>
+          <span id="i18n-add-sub-btn-text">Добавить</span>
         </button>
       </div>
 
@@ -414,17 +422,17 @@
     <div class="glass-dock rounded-full p-1.5 shadow-2xl flex items-center justify-around relative">
       <button onclick="switchTab('analytics')" id="nav-analytics" class="dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white bg-white/15 font-semibold">
         <span class="text-base leading-none">📊</span>
-        <span class="text-[10px] mt-1">Обзор</span>
+        <span id="i18n-dock-overview" class="text-[10px] mt-1">Обзор</span>
       </button>
 
       <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white/50 hover:text-white font-medium">
         <span class="text-base leading-none">📋</span>
-        <span class="text-[10px] mt-1">Подписки</span>
+        <span id="i18n-dock-subs" class="text-[10px] mt-1">Подписки</span>
       </button>
 
       <button onclick="openAddModal(event)" class="dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-[#2997ff] font-semibold active:scale-95 hover:text-white">
         <span class="text-base leading-none font-bold">＋</span>
-        <span class="text-[10px] mt-1">Создать</span>
+        <span id="i18n-dock-create" class="text-[10px] mt-1">Создать</span>
       </button>
     </div>
   </nav>
@@ -438,14 +446,14 @@
 
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2">
-          <h3 class="text-base font-bold text-white">Новая подписка</h3>
+          <h3 id="i18n-modal-title" class="text-base font-bold text-white">Новая подписка</h3>
         </div>
         <button type="button" onclick="closeAddModal()" class="w-8 h-8 rounded-full bg-white/10 text-white/70 hover:text-white flex items-center justify-center text-sm transition">✕</button>
       </div>
 
       <!-- Quick Preset Chips -->
       <div>
-        <div class="text-[10px] text-[#86868b] uppercase font-bold tracking-wider mb-2">Быстрый выбор</div>
+        <div id="i18n-preset-title" class="text-[10px] text-[#86868b] uppercase font-bold tracking-wider mb-2">Быстрый выбор</div>
         <div class="flex flex-wrap gap-1.5">
           <button type="button" onclick="applyPreset('Яндекс Плюс', 299, 'RUB', 30, 'https://plus.yandex.ru', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">Яндекс Плюс</button>
           <button type="button" onclick="applyPreset('Telegram Premium', 399, 'RUB', 30, 'https://telegram.org', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">TG Premium</button>
@@ -461,19 +469,19 @@
         
         <!-- Service Name -->
         <div>
-          <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Название сервиса</label>
-          <input type="text" id="form-name" required placeholder="Например: Netflix, Кинопоиск..." class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-white/25 focus:outline-none focus:border-[#0071e3] transition">
+          <label id="i18n-lbl-name" class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Название сервиса</label>
+          <input type="text" id="form-name" required placeholder="Например: Netflix, Spotify..." class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-white/25 focus:outline-none focus:border-[#0071e3] transition">
         </div>
 
         <!-- Price and Currency Row -->
         <div class="grid grid-cols-2 gap-3 items-end">
           <div>
-            <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Стоимость</label>
+            <label id="i18n-lbl-price" class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Стоимость</label>
             <input type="text" inputmode="decimal" id="form-price" required placeholder="299" class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-white/25 focus:outline-none focus:border-[#0071e3] transition">
           </div>
 
           <div>
-            <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Валюта</label>
+            <label id="i18n-lbl-curr" class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Валюта</label>
             <div class="grid grid-cols-4 gap-1 bg-[#1c1c20] border border-white/15 p-1 rounded-xl">
               <button type="button" onclick="setFormCurrency('RUB')" id="f-curr-RUB" class="form-curr-pill py-1.5 rounded-lg text-xs font-bold transition bg-[#0071e3] text-white">₽</button>
               <button type="button" onclick="setFormCurrency('BYN')" id="f-curr-BYN" class="form-curr-pill py-1.5 rounded-lg text-xs font-medium transition text-white/60 hover:text-white">Br</button>
@@ -486,13 +494,13 @@
 
         <!-- Period Row with Direct Keyboard Input and Quick Buttons -->
         <div>
-          <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Период списания (дней)</label>
+          <label id="i18n-lbl-period" class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Период списания (дней)</label>
           <div class="flex items-center space-x-2">
             <input type="number" id="form-period" value="30" min="1" max="3650" required class="w-28 bg-[#1c1c20] border border-white/15 rounded-xl px-3 py-2 text-center text-base text-white focus:outline-none focus:border-[#0071e3] transition">
             <div class="flex-1 flex gap-1.5">
-              <button type="button" onclick="setFormPeriod(30)" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">30 дн.</button>
-              <button type="button" onclick="setFormPeriod(365)" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">1 год</button>
-              <button type="button" onclick="setFormPeriod(7)" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">7 дн.</button>
+              <button type="button" onclick="setFormPeriod(30)" id="i18n-chip-30d" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">30 дн.</button>
+              <button type="button" onclick="setFormPeriod(365)" id="i18n-chip-1yr" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">1 год</button>
+              <button type="button" onclick="setFormPeriod(7)" id="i18n-chip-7d" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">7 дн.</button>
             </div>
           </div>
         </div>
@@ -500,11 +508,11 @@
         <!-- Next Billing Date with Quick Buttons -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="text-[11px] text-[#86868b] uppercase font-bold tracking-wider">Дата списания</label>
+            <label id="i18n-lbl-date" class="text-[11px] text-[#86868b] uppercase font-bold tracking-wider">Дата списания</label>
             <div class="flex space-x-2">
-              <button type="button" onclick="setOffsetDate(0)" class="text-[11px] text-[#2997ff] hover:underline">Сегодня</button>
-              <button type="button" onclick="setOffsetDate(30)" class="text-[11px] text-[#2997ff] hover:underline">+30 дн.</button>
-              <button type="button" onclick="setOffsetDate(365)" class="text-[11px] text-[#2997ff] hover:underline">+1 год</button>
+              <button type="button" onclick="setOffsetDate(0)" id="i18n-date-today" class="text-[11px] text-[#2997ff] hover:underline">Сегодня</button>
+              <button type="button" onclick="setOffsetDate(30)" id="i18n-date-30d" class="text-[11px] text-[#2997ff] hover:underline">+30 дн.</button>
+              <button type="button" onclick="setOffsetDate(365)" id="i18n-date-1yr" class="text-[11px] text-[#2997ff] hover:underline">+1 год</button>
             </div>
           </div>
           <input type="date" id="form-date" required class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white focus:outline-none focus:border-[#0071e3] transition cursor-pointer">
@@ -512,23 +520,235 @@
 
         <!-- Cancellation URL -->
         <div>
-          <label class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Ссылка на отмену (опционально)</label>
+          <label id="i18n-lbl-url" class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Ссылка на отмену (опционально)</label>
           <input type="url" id="form-url" placeholder="https://service.com/cancel" class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-white/25 focus:outline-none focus:border-[#0071e3] transition">
         </div>
 
         <button type="submit" id="submit-btn" class="w-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold py-3.5 rounded-xl transition text-base flex items-center justify-center space-x-2 mt-2 shadow-lg shadow-[#0071e3]/20 active:scale-[0.99]">
-          <span>Сохранить подписку</span>
+          <span id="i18n-btn-save-text">Сохранить подписку</span>
         </button>
       </form>
     </div>
   </div>
 
   <script>
+    const I18N = {
+      ru: {
+        account: "Личный кабинет",
+        annual_spend: "В С Е Г О   В   Г О Д",
+        active: "Активно",
+        calendar: "Календарь списаний",
+        this_month: "В этом месяце",
+        normal: "В норме",
+        manage: "Управление",
+        your_subs: "Ваши подписки",
+        add_btn: "Добавить",
+        overview: "Обзор",
+        subscriptions: "Подписки",
+        create: "Создать",
+        new_sub: "Новая подписка",
+        quick_choice: "Быстрый выбор",
+        service_name: "Название сервиса",
+        service_placeholder: "Например: Netflix, Кинопоиск...",
+        price: "Стоимость",
+        currency: "Валюта",
+        period_days: "Период списания (дней)",
+        d30: "30 дн.",
+        y1: "1 год",
+        d7: "7 дн.",
+        billing_date: "Дата списания",
+        today: "Сегодня",
+        p30d: "+30 дн.",
+        p1y: "+1 год",
+        cancel_url: "Ссылка на отмену (опционально)",
+        save_sub: "Сохранить подписку",
+        saving: "Сохранение...",
+        empty_title: "Список подписок пуст",
+        empty_desc: "Добавьте ваши регулярные сервисы, чтобы бот предупреждал о списаниях за 24 часа.",
+        empty_btn: "＋ Добавить подписку",
+        overdue: "просрочено",
+        today_excl: "Сегодня!",
+        in_days: "через {d} дн.",
+        days_short: "дн.",
+        cancel_short: "Отменить",
+        confirm_delete: "Удалить эту подписку?",
+        toast_sound_on: "Звук включен",
+        toast_sound_off: "Звук отключен",
+        toast_sub_saved: "Подписка сохранена",
+        toast_sub_deleted: "Подписка удалена",
+        toast_sub_active: "Подписка активна",
+        toast_sub_paused: "Подписка на паузе",
+        no_active_subs: "Нет активных подписок",
+        per_year_short: "/год",
+        per_month_short: "/ мес",
+        active_word: function(n) { return (n % 10 === 1 && n % 100 !== 11) ? 'активная' : 'активных'; },
+        months: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+        months_full: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+      },
+      be: {
+        account: "Асабісты кабінет",
+        annual_spend: "У С Я Г О   Ў   Г О Д",
+        active: "Актыўна",
+        calendar: "Каляндар спісанняў",
+        this_month: "У гэтым месяцы",
+        normal: "У норме",
+        manage: "Кіраванне",
+        your_subs: "Вашы падпіскі",
+        add_btn: "Дадаць",
+        overview: "Агляд",
+        subscriptions: "Падпіскі",
+        create: "Стварыць",
+        new_sub: "Новая падпіска",
+        quick_choice: "Хуткі выбар",
+        service_name: "Назва сэрвісу",
+        service_placeholder: "Напрыклад: Netflix, Spotify...",
+        price: "Кошт",
+        currency: "Валюта",
+        period_days: "Перыяд спісання (дзён)",
+        d30: "30 дн.",
+        y1: "1 год",
+        d7: "7 дн.",
+        billing_date: "Дата спісання",
+        today: "Сёння",
+        p30d: "+30 дн.",
+        p1y: "+1 год",
+        cancel_url: "Спасылка на адмену (апцыянальна)",
+        save_sub: "Захаваць падпіску",
+        saving: "Захаванне...",
+        empty_title: "Спіс падпісак пусты",
+        empty_desc: "Дадайце вашы рэгулярныя сэрвісы, каб бот папярэджваў пра спісанні за 24 гадзіны.",
+        empty_btn: "＋ Дадаць падпіску",
+        overdue: "пратэрмінавана",
+        today_excl: "Сёння!",
+        in_days: "праз {d} дн.",
+        days_short: "дн.",
+        cancel_short: "Адмяніць",
+        confirm_delete: "Выдаліць гэтую падпіску?",
+        toast_sound_on: "Гук уключаны",
+        toast_sound_off: "Гук адключаны",
+        toast_sub_saved: "Падпіска захавана",
+        toast_sub_deleted: "Падпіска выдалена",
+        toast_sub_active: "Падпіска актыўная",
+        toast_sub_paused: "Падпіска на паўзе",
+        no_active_subs: "Няма актыўных падпісак",
+        per_year_short: "/год",
+        per_month_short: "/ мес",
+        active_word: function(n) { return (n % 10 === 1 && n % 100 !== 11) ? 'актыўная' : 'актыўных'; },
+        months: ['Сту', 'Лют', 'Сак', 'Кра', 'Май', 'Чэр', 'Ліп', 'Жні', 'Вер', 'Кас', 'Ліс', 'Сне'],
+        months_full: ['Студзень', 'Люты', 'Сакавік', 'Красавік', 'Май', 'Чэрвень', 'Ліпень', 'Жнівень', 'Верасень', 'Кастрычнік', 'Лістапад', 'Снежань'],
+      },
+      en: {
+        account: "My Account",
+        annual_spend: "A N N U A L   T O T A L",
+        active: "Active",
+        calendar: "Payment Calendar",
+        this_month: "This month",
+        normal: "On track",
+        manage: "Management",
+        your_subs: "Your Subscriptions",
+        add_btn: "Add",
+        overview: "Overview",
+        subscriptions: "Subscriptions",
+        create: "Create",
+        new_sub: "New Subscription",
+        quick_choice: "Quick Presets",
+        service_name: "Service Name",
+        service_placeholder: "e.g., Netflix, Spotify...",
+        price: "Amount",
+        currency: "Currency",
+        period_days: "Billing Period (days)",
+        d30: "30 d.",
+        y1: "1 yr",
+        d7: "7 d.",
+        billing_date: "Billing Date",
+        today: "Today",
+        p30d: "+30 d.",
+        p1y: "+1 yr",
+        cancel_url: "Cancellation Link (optional)",
+        save_sub: "Save Subscription",
+        saving: "Saving...",
+        empty_title: "Subscription list is empty",
+        empty_desc: "Add your regular services so StopPay can alert you 24 hours before you are charged.",
+        empty_btn: "＋ Add Subscription",
+        overdue: "overdue",
+        today_excl: "Today!",
+        in_days: "in {d} d.",
+        days_short: "d.",
+        cancel_short: "Cancel",
+        confirm_delete: "Delete this subscription?",
+        toast_sound_on: "Sound ON",
+        toast_sound_off: "Sound OFF",
+        toast_sub_saved: "Subscription saved",
+        toast_sub_deleted: "Subscription deleted",
+        toast_sub_active: "Subscription active",
+        toast_sub_paused: "Subscription paused",
+        no_active_subs: "No active subscriptions",
+        per_year_short: "/yr",
+        per_month_short: "/ mo",
+        active_word: function(n) { return 'active'; },
+        months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        months_full: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+      },
+      pl: {
+        account: "Moje Konto",
+        annual_spend: "R O C Z N I E   R A Z E M",
+        active: "Aktywne",
+        calendar: "Kalendarz płatności",
+        this_month: "W tym miesiącu",
+        normal: "W normie",
+        manage: "Zarządzanie",
+        your_subs: "Twoje subskrypcje",
+        add_btn: "Dodaj",
+        overview: "Przegląd",
+        subscriptions: "Subskrypcje",
+        create: "Utwórz",
+        new_sub: "Nowa subskrypcja",
+        quick_choice: "Szybki wybór",
+        service_name: "Nazwa usługi",
+        service_placeholder: "np. Netflix, Spotify...",
+        price: "Kwota",
+        currency: "Waluta",
+        period_days: "Okres rozliczeniowy (dni)",
+        d30: "30 dni",
+        y1: "1 rok",
+        d7: "7 dni",
+        billing_date: "Data płatności",
+        today: "Dzisiaj",
+        p30d: "+30 dni",
+        p1y: "+1 rok",
+        cancel_url: "Link do rezygnacji (opcjonalnie)",
+        save_sub: "Zapisz subskrypcję",
+        saving: "Zapisywanie...",
+        empty_title: "Brak subskrypcji",
+        empty_desc: "Dodaj swoje regularne usługi, aby bot ostrzegał o płatnościach 24 godziny wcześniej.",
+        empty_btn: "＋ Dodaj subskrypcję",
+        overdue: "przeterminowane",
+        today_excl: "Dzisiaj!",
+        in_days: "za {d} dni",
+        days_short: "dni",
+        cancel_short: "Anuluj",
+        confirm_delete: "Usunąć tę subskrypcję?",
+        toast_sound_on: "Dźwięk włączony",
+        toast_sound_off: "Dźwięk wyłączony",
+        toast_sub_saved: "Subskrypcja zapisana",
+        toast_sub_deleted: "Subskrypcja usunięta",
+        toast_sub_active: "Subskrypcja aktywna",
+        toast_sub_paused: "Subskrypcja wstrzymana",
+        no_active_subs: "Brak aktywnych subskrypcji",
+        per_year_short: "/rok",
+        per_month_short: "/ mies",
+        active_word: function(n) { return (n % 10 === 1 && n % 100 !== 11) ? 'aktywna' : 'aktywnych'; },
+        months: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'],
+        months_full: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
+      }
+    };
+
     // State
     const state = {
       user_id: null,
       first_name: '',
       currency: 'RUB',
+      lang: 'ru',
       activeTab: 'analytics',
       subscriptions: [],
       metrics: null
@@ -538,8 +758,89 @@
     const APPLE_COLORS = ['#2997ff', '#30d158', '#ff9f0a', '#bf5af2', '#ff375f', '#ffd60a', '#64d2ff'];
     const CURRENCY_SYMBOLS = { RUB: '₽', BYN: 'Br', USD: '$', PLN: 'zł' };
 
-    const MONTH_NAMES = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-    const MONTH_FULL_NAMES = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    function resolveLanguage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLang = urlParams.get('lang');
+      if (urlLang && ['ru', 'be', 'en', 'pl'].includes(urlLang.toLowerCase())) {
+        return urlLang.toLowerCase();
+      }
+      const stored = localStorage.getItem('stoppay_lang');
+      if (stored && ['ru', 'be', 'en', 'pl'].includes(stored.toLowerCase())) {
+        return stored.toLowerCase();
+      }
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code) {
+        const code = window.Telegram.WebApp.initDataUnsafe.user.language_code.toLowerCase();
+        if (code.startsWith('be')) return 'be';
+        if (code.startsWith('en')) return 'en';
+        if (code.startsWith('pl')) return 'pl';
+        if (code.startsWith('ru')) return 'ru';
+      }
+      return 'ru';
+    }
+
+    function changeLanguage(lang) {
+      if (!I18N[lang]) return;
+      if (typeof AudioFX !== 'undefined') AudioFX.click();
+      state.lang = lang;
+      localStorage.setItem('stoppay_lang', lang);
+      updateLanguageUI();
+      renderUI();
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function updateLanguageUI() {
+      const lang = state.lang;
+      const dict = I18N[lang] || I18N.ru;
+
+      document.querySelectorAll('.lang-pill').forEach(btn => {
+        btn.className = 'lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white';
+      });
+      const activeBtn = document.getElementById('lang-btn-' + lang);
+      if (activeBtn) {
+        activeBtn.className = 'lang-pill px-1.5 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm';
+      }
+
+      const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+      };
+
+      setText('i18n-annual-spend-title', dict.annual_spend);
+      setText('i18n-active-badge', dict.active);
+      setText('i18n-calendar-title', dict.calendar);
+      setText('i18n-normal-badge', dict.normal);
+      setText('i18n-manage-title', dict.manage);
+      setText('i18n-your-subs-title', dict.your_subs);
+      setText('i18n-add-sub-btn-text', dict.add_btn);
+      setText('i18n-dock-overview', dict.overview);
+      setText('i18n-dock-subs', dict.subscriptions);
+      setText('i18n-dock-create', dict.create);
+      setText('i18n-modal-title', dict.new_sub);
+      setText('i18n-preset-title', dict.quick_choice);
+      setText('i18n-lbl-name', dict.service_name);
+      setText('i18n-lbl-price', dict.price);
+      setText('i18n-lbl-curr', dict.currency);
+      setText('i18n-lbl-period', dict.period_days);
+      setText('i18n-chip-30d', dict.d30);
+      setText('i18n-chip-1yr', dict.y1);
+      setText('i18n-chip-7d', dict.d7);
+      setText('i18n-lbl-date', dict.billing_date);
+      setText('i18n-date-today', dict.today);
+      setText('i18n-date-30d', dict.p30d);
+      setText('i18n-date-1yr', dict.p1y);
+      setText('i18n-lbl-url', dict.cancel_url);
+      setText('i18n-btn-save-text', dict.save_sub);
+
+      const formName = document.getElementById('form-name');
+      if (formName) formName.placeholder = dict.service_placeholder;
+
+      for (let m = 0; m < 12; m++) {
+        const mlbl = document.getElementById(`m-lbl-${m}`);
+        if (mlbl) mlbl.innerText = dict.months[m];
+      }
+
+      updateUserBadge();
+    }
 
     const tg = window.Telegram?.WebApp;
 
@@ -616,13 +917,14 @@
     };
 
     function toggleSound() {
+      const dict = I18N[state.lang] || I18N.ru;
       AudioFX.enabled = !AudioFX.enabled;
       document.getElementById('sound-icon').innerText = AudioFX.enabled ? '🔊' : '🔇';
       if (AudioFX.enabled) {
         AudioFX.click();
-        showToast('Звук включен');
+        showToast(dict.toast_sound_on);
       } else {
-        showToast('Звук отключен');
+        showToast(dict.toast_sound_off);
       }
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
@@ -808,6 +1110,7 @@
         } catch(e) {}
       }
 
+      state.lang = resolveLanguage();
       resolveUser();
 
       if (state.user_id) {
@@ -815,7 +1118,7 @@
         if (state.first_name) localStorage.setItem('stoppay_user_name', state.first_name);
       }
 
-      updateUserBadge();
+      updateLanguageUI();
       setOffsetDate(30);
 
       // Attach 3D tilt to all static glass cards
@@ -825,11 +1128,12 @@
     }
 
     function updateUserBadge() {
+      const dict = I18N[state.lang] || I18N.ru;
       const badge = document.getElementById('user-badge');
       if (state.first_name) {
         badge.innerText = state.first_name;
       } else {
-        badge.innerText = 'Личный кабинет';
+        badge.innerText = dict.account;
       }
     }
 
@@ -1015,6 +1319,7 @@
     }
 
     function renderDonutChart() {
+      const dict = I18N[state.lang] || I18N.ru;
       const sym = CURRENCY_SYMBOLS[state.currency] || state.currency;
       const g = document.getElementById('donut-segments');
       const breakdownEl = document.getElementById('services-breakdown');
@@ -1027,9 +1332,9 @@
 
       if (!state.metrics || state.metrics.services_count === 0) {
         totalEl.innerText = `0 ${sym}`;
-        monthlyEl.innerText = `0 ${sym} / мес`;
-        badgeEl.innerText = '0 активных';
-        breakdownEl.innerHTML = '<div class="col-span-2 text-center text-[#86868b] py-3 text-xs">Нет активных подписок</div>';
+        monthlyEl.innerText = `0 ${sym} ${dict.per_month_short}`;
+        badgeEl.innerText = `0 ${dict.active_word(0)}`;
+        breakdownEl.innerHTML = `<div class="col-span-2 text-center text-[#86868b] py-3 text-xs">${dict.no_active_subs}</div>`;
         prevTotal = 0;
         prevMonthly = 0;
         return;
@@ -1046,11 +1351,11 @@
       const services = state.metrics.services;
 
       animateCounter(totalEl, prevTotal, total, ` ${sym}`);
-      animateCounter(monthlyEl, prevMonthly, monthly, ` ${sym} / мес`);
+      animateCounter(monthlyEl, prevMonthly, monthly, ` ${sym} ${dict.per_month_short}`);
       prevTotal = total;
       prevMonthly = monthly;
 
-      badgeEl.innerText = `${count} ${pluralizeSubs(count)}`;
+      badgeEl.innerText = `${count} ${dict.active_word(count)}`;
 
       const r = 62;
       const circumference = 2 * Math.PI * r;
@@ -1084,19 +1389,15 @@
           <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${color}"></span>
           <div class="truncate flex-1">
             <div class="text-white font-medium truncate text-xs">${s.name}</div>
-            <div class="text-[10px] text-[#86868b]">${fmt(s.annual_cost)} ${sym}/год (${pct}%)</div>
+            <div class="text-[10px] text-[#86868b]">${fmt(s.annual_cost)} ${sym}${dict.per_year_short} (${pct}%)</div>
           </div>
         `;
         breakdownEl.appendChild(pill);
       });
     }
 
-    function pluralizeSubs(n) {
-      if (n % 10 === 1 && n % 100 !== 11) return 'активная';
-      return 'активных';
-    }
-
     function renderMonthlyBars() {
+      const dict = I18N[state.lang] || I18N.ru;
       const container = document.getElementById('monthly-bars');
       container.innerHTML = '';
       const sym = CURRENCY_SYMBOLS[state.currency] || state.currency;
@@ -1106,7 +1407,7 @@
       const currentMonthVal = monthlyTotals[currentMonth];
       const titleEl = document.getElementById('monthly-forecast-title');
       if (titleEl) {
-        titleEl.innerText = `В этом месяце: ${fmt(currentMonthVal)} ${sym}`;
+        titleEl.innerText = `${dict.this_month}: ${fmt(currentMonthVal)} ${sym}`;
       }
 
       const maxVal = Math.max(...monthlyTotals, 0);
@@ -1132,13 +1433,13 @@
 
         col.addEventListener('mouseenter', () => {
           if (titleEl) {
-            titleEl.innerText = `${MONTH_FULL_NAMES[m]}: ${fmt(val)} ${sym}`;
+            titleEl.innerText = `${dict.months_full[m]}: ${fmt(val)} ${sym}`;
           }
         });
 
         col.addEventListener('mouseleave', () => {
           if (titleEl) {
-            titleEl.innerText = `В этом месяце: ${fmt(currentMonthVal)} ${sym}`;
+            titleEl.innerText = `${dict.this_month}: ${fmt(currentMonthVal)} ${sym}`;
           }
         });
 
@@ -1147,13 +1448,14 @@
           document.querySelectorAll('.bar-col').forEach(c => c.classList.remove('active-bar'));
           col.classList.add('active-bar');
           if (titleEl) {
-            titleEl.innerText = `${MONTH_FULL_NAMES[m]}: ${fmt(val)} ${sym}`;
+            titleEl.innerText = `${dict.months_full[m]}: ${fmt(val)} ${sym}`;
           }
           if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         });
 
         const lblEl = document.getElementById(`m-lbl-${m}`);
         if (lblEl) {
+          lblEl.innerText = dict.months[m];
           if (isCurrent) {
             lblEl.className = 'text-[#2997ff] font-bold';
           } else {
@@ -1166,6 +1468,8 @@
     }
 
     function renderSubscriptionsList() {
+      const dict = I18N[state.lang] || I18N.ru;
+      const dateLocale = state.lang === 'be' ? 'be-BY' : (state.lang === 'en' ? 'en-US' : (state.lang === 'pl' ? 'pl-PL' : 'ru-RU'));
       const container = document.getElementById('subs-list-container');
       container.innerHTML = '';
 
@@ -1175,10 +1479,10 @@
             <div class="w-12 h-12 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
               💳
             </div>
-            <div class="text-sm font-semibold text-white">Список подписок пуст</div>
-            <div class="text-xs text-[#86868b] max-w-xs mx-auto leading-relaxed">Добавьте ваши регулярные сервисы, чтобы бот предупреждал о списаниях за 24 часа.</div>
+            <div class="text-sm font-semibold text-white">${dict.empty_title}</div>
+            <div class="text-xs text-[#86868b] max-w-xs mx-auto leading-relaxed">${dict.empty_desc}</div>
             <button onclick="openAddModal(event)" class="bg-[#0071e3] text-white text-xs px-5 py-2 rounded-full font-medium transition mt-2 shadow-sm active:scale-95">
-              ＋ Добавить подписку
+              ${dict.empty_btn}
             </button>
           </div>
         `;
@@ -1199,20 +1503,23 @@
           bDate.setHours(0, 0, 0, 0);
           const diffDays = Math.round((bDate - today) / (1000 * 60 * 60 * 24));
 
-          const dateStr = bDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+          const dateStr = bDate.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' });
           if (diffDays < 0) {
-            daysNotice = `<span class="text-[#ff453a] font-medium">${dateStr} (просрочено)</span>`;
+            daysNotice = `<span class="text-[#ff453a] font-medium">${dateStr} (${dict.overdue})</span>`;
           } else if (diffDays === 0) {
-            daysNotice = `<span class="text-[#ff9f0a] font-bold animate-pulse">Сегодня!</span>`;
-          } else if (diffDays <= 3) {
-            daysNotice = `<span class="text-[#ff9f0a] font-medium">${dateStr} (через ${diffDays} дн.)</span>`;
+            daysNotice = `<span class="text-[#ff9f0a] font-bold animate-pulse">${dict.today_excl}</span>`;
           } else {
-            daysNotice = `<span class="text-[#86868b]">${dateStr} (через ${diffDays} дн.)</span>`;
+            const inDaysStr = dict.in_days.replace('{d}', diffDays);
+            if (diffDays <= 3) {
+              daysNotice = `<span class="text-[#ff9f0a] font-medium">${dateStr} (${inDaysStr})</span>`;
+            } else {
+              daysNotice = `<span class="text-[#86868b]">${dateStr} (${inDaysStr})</span>`;
+            }
           }
         }
 
         const cancelBtn = sub.cancel_url
-          ? `<a href="${sub.cancel_url}" target="_blank" onclick="event.stopPropagation()" class="text-[11px] text-[#2997ff] hover:underline flex items-center space-x-0.5"><span>↗ Отменить</span></a>`
+          ? `<a href="${sub.cancel_url}" target="_blank" onclick="event.stopPropagation()" class="text-[11px] text-[#2997ff] hover:underline flex items-center space-x-0.5"><span>↗ ${dict.cancel_short}</span></a>`
           : '';
 
         const brandColor = APPLE_COLORS[i % APPLE_COLORS.length];
@@ -1242,7 +1549,7 @@
             <div class="flex items-center space-x-3 flex-shrink-0">
               <div class="text-right">
                 <div class="text-sm font-bold text-white">${sub.price} ${sym}</div>
-                <div class="text-[10px] text-[#86868b]">${sub.period_days} дн.</div>
+                <div class="text-[10px] text-[#86868b]">${sub.period_days} ${dict.days_short}</div>
               </div>
 
               <!-- Apple iOS Toggle Switch -->
@@ -1266,6 +1573,7 @@
     }
 
     async function toggleSub(subId, checkbox, event) {
+      const dict = I18N[state.lang] || I18N.ru;
       AudioFX.thud();
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
@@ -1278,7 +1586,7 @@
       const sub = state.subscriptions.find(s => s.id === subId);
       if (sub) {
         sub.is_active = checkbox.checked;
-        showToast(checkbox.checked ? 'Подписка активна' : 'Подписка на паузе');
+        showToast(checkbox.checked ? dict.toast_sub_active : dict.toast_sub_paused);
       }
 
       try {
@@ -1293,8 +1601,9 @@
     }
 
     async function deleteSub(subId, event) {
+      const dict = I18N[state.lang] || I18N.ru;
       AudioFX.thud();
-      if (!confirm('Удалить эту подписку?')) return;
+      if (!confirm(dict.confirm_delete)) return;
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
 
       if (particleSystem && event) {
@@ -1305,7 +1614,7 @@
 
       try {
         await fetch(`/api/subscriptions/${subId}`, { method: 'DELETE' });
-        showToast('Подписка удалена', '✕');
+        showToast(dict.toast_sub_deleted, '✕');
         loadData();
       } catch (e) {
         console.error('Failed to delete:', e);
@@ -1391,9 +1700,10 @@
 
     async function submitNewSub(e) {
       e.preventDefault();
+      const dict = I18N[state.lang] || I18N.ru;
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;
-      btn.innerText = 'Сохранение...';
+      btn.innerText = dict.saving;
 
       const payload = {
         user_id: state.user_id,
@@ -1415,7 +1725,7 @@
         const resData = await res.json();
         if (resData.status === 'ok') {
           AudioFX.chime();
-          showToast('Подписка сохранена', '✓');
+          showToast(dict.toast_sub_saved, '✓');
           
           if (particleSystem) {
             particleSystem.burst(window.innerWidth / 2, window.innerHeight / 2, '#30d158', 35);
@@ -1428,13 +1738,13 @@
           await loadData();
           switchTab('subscriptions');
         } else {
-          alert('Ошибка: ' + (resData.message || 'Не удалось сохранить'));
+          alert('Error: ' + (resData.message || 'Failed'));
         }
       } catch (err) {
-        alert('Ошибка связи с сервером');
+        alert('Network error');
       } finally {
         btn.disabled = false;
-        btn.innerText = 'Сохранить подписку';
+        btn.innerText = dict.save_sub;
       }
     }
 

@@ -296,8 +296,9 @@ async def main() -> None:
             await bot.set_my_commands([
                 BotCommand(command="start", description=" Открыть StopPay"),
                 BotCommand(command="help", description="ℹ️ Справка и руководство"),
+                BotCommand(command="language", description="🌐 Язык / Language / Мова"),
             ])
-            logger.info("Telegram commands menu configured: /start, /help")
+            logger.info("Telegram commands menu configured: /start, /help, /language")
         except Exception as cmd_err:
             logger.warning(f"Could not set bot commands: {cmd_err}")
 
@@ -346,8 +347,9 @@ async def main() -> None:
                 await bot.set_my_commands([
                     BotCommand(command="start", description=" Открыть StopPay"),
                     BotCommand(command="help", description="ℹ️ Справка и руководство"),
+                    BotCommand(command="language", description="🌐 Язык / Language / Мова"),
                 ])
-                logger.info("Telegram commands menu configured: /start, /help")
+                logger.info("Telegram commands menu configured: /start, /help, /language")
             except Exception as cmd_err:
                 logger.warning(f"Could not set bot commands: {cmd_err}")
 

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.states.subscription_states import AddSubscriptionStates, EditSubscriptionStates
 from bot.keyboards.reply import get_main_menu_keyboard, get_cancel_keyboard
 from bot.utils.cleaner import send_clean_message
+from bot.locales import get_text
 from bot.keyboards.inline import (
     get_currency_keyboard,
     get_period_keyboard,
@@ -47,65 +48,70 @@ CURRENCY_DISPLAY = {
 }
 
 
-def format_sub_card(sub) -> str:
+def format_sub_card(sub, lang: str = "ru") -> str:
     curr = CURRENCY_DISPLAY.get(sub.currency, sub.currency)
     price_str = f"{sub.price:g}" if sub.price.is_integer() else f"{sub.price:.2f}"
-    status_str = "● Активна" if sub.is_active else "○ На паузе"
+    status_str = get_text("status_active", lang) if sub.is_active else get_text("status_paused", lang)
 
     today = date.today()
     days_left = (sub.next_billing_date - today).days
     if days_left > 0:
-        days_str = f"через {days_left} дн."
+        days_str = get_text("days_left_in", lang, days=days_left)
     elif days_left == 0:
-        days_str = "сегодня"
+        days_str = get_text("days_left_today", lang)
     else:
-        days_str = f"просрочено на {-days_left} дн."
+        days_str = get_text("days_left_overdue", lang, days=-days_left)
 
     date_formatted = sub.next_billing_date.strftime("%d.%m.%Y")
 
     card = (
         f" <b>{sub.service_name}</b> · {status_str}\n"
         f"────────────────────\n"
-        f"• Сумма: <b>{price_str} {curr}</b> / {sub.period_days} дн.\n"
-        f"• Списание: <b>{date_formatted}</b> ({days_str})\n"
+        f"{get_text('card_amount_line', lang, price=price_str, curr=curr, days=sub.period_days)}\n"
+        f"{get_text('card_billing_line', lang, date=date_formatted, days_str=days_str)}\n"
     )
     if sub.cancel_url:
-        card += f"• Ссылка: <a href=\"{sub.cancel_url}\">Отменить подписку</a>\n"
+        card += f"{get_text('card_cancel_link_line', lang, url=sub.cancel_url)}\n"
     return card
 
 
 # --- FLOW: ADD SUBSCRIPTION ---
 
 @router.message(Command("add"))
-@router.message(F.text == "➕ Добавить подписку")
-async def start_add_subscription(message: Message, state: FSMContext) -> None:
+@router.message(F.text.in_({"➕ Добавить подписку", "＋ Дадаць падпіску", "＋ Add subscription", "＋ Dodaj subskrypcję"}))
+async def start_add_subscription(message: Message, state: FSMContext, user_lang: str = "ru") -> None:
     await state.clear()
     await state.set_state(AddSubscriptionStates.service_name)
+    await state.update_data(flow_lang=user_lang)
     await send_clean_message(
         message,
-        "Шаг 1/5: Введите <b>название сервиса</b>\n(например, <i>Яндекс</i> или <i>Netflix</i>):",
+        get_text("step_service_name", user_lang),
         parse_mode="HTML",
-        reply_markup=get_cancel_keyboard(),
+        reply_markup=get_cancel_keyboard(user_lang),
     )
 
 
 @router.callback_query(F.data == "add_new_sub")
-async def cb_add_new_sub(callback: CallbackQuery, state: FSMContext) -> None:
+async def cb_add_new_sub(callback: CallbackQuery, state: FSMContext, user_lang: str = "ru") -> None:
     await callback.answer()
     await state.clear()
     await state.set_state(AddSubscriptionStates.service_name)
+    await state.update_data(flow_lang=user_lang)
     await send_clean_message(
         callback.message,
-        "Шаг 1/5: Введите <b>название сервиса</b>\n(например, <i>Яндекс</i> или <i>Netflix</i>):",
+        get_text("step_service_name", user_lang),
         parse_mode="HTML",
-        reply_markup=get_cancel_keyboard(),
+        reply_markup=get_cancel_keyboard(user_lang),
         delete_trigger=False,
     )
 
 
 @router.message(AddSubscriptionStates.service_name)
-async def process_service_name(message: Message, state: FSMContext) -> None:
-    is_valid, name, error = validate_service_name(message.text)
+async def process_service_name(message: Message, state: FSMContext, user_lang: str = "ru") -> None:
+    data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
+
+    is_valid, name, error = validate_service_name(message.text, lang=lang)
     if not is_valid:
         await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
@@ -114,14 +120,17 @@ async def process_service_name(message: Message, state: FSMContext) -> None:
     await state.set_state(AddSubscriptionStates.price)
     await send_clean_message(
         message,
-        f"Шаг 2/5: Введите <b>сумму списания</b> для <b>{name}</b>\n(например: <code>299</code>):",
+        get_text("step_price", lang, name=name),
         parse_mode="HTML",
     )
 
 
 @router.message(AddSubscriptionStates.price)
-async def process_price(message: Message, state: FSMContext) -> None:
-    is_valid, price, error = validate_price(message.text)
+async def process_price(message: Message, state: FSMContext, user_lang: str = "ru") -> None:
+    data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
+
+    is_valid, price, error = validate_price(message.text, lang=lang)
     if not is_valid:
         await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
@@ -130,37 +139,41 @@ async def process_price(message: Message, state: FSMContext) -> None:
     await state.set_state(AddSubscriptionStates.currency)
     await send_clean_message(
         message,
-        f"Шаг 3/5: Выберите <b>валюту</b> списания:",
+        get_text("step_currency", lang),
         parse_mode="HTML",
         reply_markup=get_currency_keyboard(),
     )
 
 
 @router.callback_query(AddSubscriptionStates.currency, F.data.startswith("curr_"))
-async def process_currency_selection(callback: CallbackQuery, state: FSMContext) -> None:
+async def process_currency_selection(callback: CallbackQuery, state: FSMContext, user_lang: str = "ru") -> None:
     currency = callback.data.split("_")[1]
+    data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
+
     await state.update_data(currency=currency)
     await state.set_state(AddSubscriptionStates.period)
     await callback.answer()
 
     curr_symbol = CURRENCY_DISPLAY.get(currency, currency)
     await callback.message.edit_text(
-        f"Валюта: <b>{curr_symbol} ({currency})</b>\n\n"
-        "Шаг 3/5: Выберите <b>периодичность</b>:",
+        get_text("step_period", lang, curr_symbol=curr_symbol, currency=currency),
         parse_mode="HTML",
-        reply_markup=get_period_keyboard(),
+        reply_markup=get_period_keyboard(lang=lang),
     )
 
 
 @router.callback_query(AddSubscriptionStates.period, F.data.startswith("period_"))
-async def process_period_selection(callback: CallbackQuery, state: FSMContext) -> None:
+async def process_period_selection(callback: CallbackQuery, state: FSMContext, user_lang: str = "ru") -> None:
     period_type = callback.data.split("_")[1]
+    data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
     await callback.answer()
 
     if period_type == "custom":
         await state.set_state(AddSubscriptionStates.custom_period)
         await callback.message.edit_text(
-            "Введите количество дней (например, <code>14</code>):",
+            get_text("custom_period_prompt", lang),
             parse_mode="HTML",
         )
         return
@@ -169,15 +182,17 @@ async def process_period_selection(callback: CallbackQuery, state: FSMContext) -
     await state.update_data(period_days=period_days)
     await state.set_state(AddSubscriptionStates.billing_date)
     await callback.message.edit_text(
-        f"Период: <b>{period_days} дн.</b>\n\n"
-        "Шаг 4/5: Введите <b>дату списания</b> (<code>ДД.ММ.ГГГГ</code>):",
+        get_text("step_billing_date", lang, days=period_days),
         parse_mode="HTML",
     )
 
 
 @router.message(AddSubscriptionStates.custom_period)
-async def process_custom_period(message: Message, state: FSMContext) -> None:
-    is_valid, days, error = validate_period_days(message.text)
+async def process_custom_period(message: Message, state: FSMContext, user_lang: str = "ru") -> None:
+    data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
+
+    is_valid, days, error = validate_period_days(message.text, lang=lang)
     if not is_valid:
         await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
@@ -186,15 +201,17 @@ async def process_custom_period(message: Message, state: FSMContext) -> None:
     await state.set_state(AddSubscriptionStates.billing_date)
     await send_clean_message(
         message,
-        f"Период: <b>{days} дн.</b>\n\n"
-        "Шаг 4/5: Введите <b>дату списания</b> (<code>ДД.ММ.ГГГГ</code>):",
+        get_text("step_billing_date", lang, days=days),
         parse_mode="HTML",
     )
 
 
 @router.message(AddSubscriptionStates.billing_date)
-async def process_billing_date(message: Message, state: FSMContext) -> None:
-    is_valid, parsed_date, error = validate_billing_date(message.text)
+async def process_billing_date(message: Message, state: FSMContext, user_lang: str = "ru") -> None:
+    data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
+
+    is_valid, parsed_date, error = validate_billing_date(message.text, lang=lang)
     if not is_valid:
         await send_clean_message(message, f"⚠️ {error}", parse_mode="HTML", clean_previous=False)
         return
@@ -203,10 +220,9 @@ async def process_billing_date(message: Message, state: FSMContext) -> None:
     await state.set_state(AddSubscriptionStates.cancel_url)
     await send_clean_message(
         message,
-        f"Дата списания: <b>{parsed_date.strftime('%d.%m.%Y')}</b>\n\n"
-        "Шаг 5/5: Отправьте <b>ссылку на отмену</b> или пропустите:",
+        get_text("step_cancel_url", lang, date=parsed_date.strftime("%d.%m.%Y")),
         parse_mode="HTML",
-        reply_markup=get_skip_cancel_url_keyboard(),
+        reply_markup=get_skip_cancel_url_keyboard(lang=lang),
     )
 
 
@@ -215,9 +231,11 @@ async def process_skip_cancel_url(
     callback: CallbackQuery,
     state: FSMContext,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     await callback.answer()
     data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
     await state.clear()
 
     sub = await add_subscription(
@@ -233,9 +251,9 @@ async def process_skip_cancel_url(
 
     await send_clean_message(
         callback.message,
-        "🎉 <b>Подписка успешно сохранена!</b>\n\n" + format_sub_card(sub),
+        get_text("sub_saved", lang) + format_sub_card(sub, lang=lang),
         parse_mode="HTML",
-        reply_markup=get_main_menu_keyboard(),
+        reply_markup=get_main_menu_keyboard(lang=lang),
         delete_trigger=False,
     )
 
@@ -245,19 +263,22 @@ async def process_cancel_url(
     message: Message,
     state: FSMContext,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
-    is_valid, clean_url, error = validate_cancel_url(message.text)
+    data = await state.get_data()
+    lang = data.get("flow_lang", user_lang)
+
+    is_valid, clean_url, error = validate_cancel_url(message.text, lang=lang)
     if not is_valid:
         await send_clean_message(
             message,
-            f"⚠️ {error}\n\nЕсли хотите пропустить этот шаг, нажмите кнопку ниже:",
+            f"⚠️ {error}\n\n{get_text('skip_prompt_hint', lang)}",
             parse_mode="HTML",
-            reply_markup=get_skip_cancel_url_keyboard(),
+            reply_markup=get_skip_cancel_url_keyboard(lang=lang),
             clean_previous=False,
         )
         return
 
-    data = await state.get_data()
     await state.clear()
 
     sub = await add_subscription(
@@ -273,9 +294,9 @@ async def process_cancel_url(
 
     await send_clean_message(
         message,
-        "🎉 <b>Подписка успешно сохранена!</b>\n\n" + format_sub_card(sub),
+        get_text("sub_saved", lang) + format_sub_card(sub, lang=lang),
         parse_mode="HTML",
-        reply_markup=get_main_menu_keyboard(),
+        reply_markup=get_main_menu_keyboard(lang=lang),
     )
 
 
@@ -283,27 +304,26 @@ async def process_cancel_url(
 
 @router.message(Command("subscriptions"))
 @router.message(Command("list"))
-@router.message(F.text == "📋 Мои подписки")
+@router.message(F.text.in_({"📋 Мои подписки", "📋 Вашы падпіскі", "📋 Subscriptions", "📋 Subskrypcje"}))
 async def show_subscriptions_list(
     message: Message,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     subs = await get_user_subscriptions(session, message.from_user.id)
     if not subs:
         await send_clean_message(
             message,
-            "У вас пока нет добавленных подписок.\n\n"
-            "Нажмите кнопку ниже, чтобы добавить первую:",
-            reply_markup=get_subscriptions_list_keyboard([], user_id=message.from_user.id),
+            get_text("no_subscriptions", user_lang),
+            reply_markup=get_subscriptions_list_keyboard([], user_id=message.from_user.id, lang=user_lang),
         )
         return
 
     await send_clean_message(
         message,
-        f"📋 <b>Ваши подписки ({len(subs)}):</b>\n\n"
-        "Нажмите на сервис для управления:",
+        get_text("subs_list_title", user_lang, count=len(subs)),
         parse_mode="HTML",
-        reply_markup=get_subscriptions_list_keyboard(subs, user_id=message.from_user.id),
+        reply_markup=get_subscriptions_list_keyboard(subs, user_id=message.from_user.id, lang=user_lang),
     )
 
 
@@ -311,21 +331,21 @@ async def show_subscriptions_list(
 async def cb_list_subscriptions(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     await callback.answer()
     subs = await get_user_subscriptions(session, callback.from_user.id)
     if not subs:
         await callback.message.edit_text(
-            "У вас пока нет добавленных подписок.",
-            reply_markup=get_subscriptions_list_keyboard([], user_id=callback.from_user.id),
+            get_text("no_subscriptions", user_lang),
+            reply_markup=get_subscriptions_list_keyboard([], user_id=callback.from_user.id, lang=user_lang),
         )
         return
 
     await callback.message.edit_text(
-        f"📋 <b>Ваши подписки ({len(subs)}):</b>\n\n"
-        "Нажмите на сервис, чтобы просмотреть подробности или отредактировать:",
+        get_text("subs_list_title", user_lang, count=len(subs)),
         parse_mode="HTML",
-        reply_markup=get_subscriptions_list_keyboard(subs, user_id=callback.from_user.id),
+        reply_markup=get_subscriptions_list_keyboard(subs, user_id=callback.from_user.id, lang=user_lang),
     )
 
 
@@ -333,19 +353,20 @@ async def cb_list_subscriptions(
 async def cb_view_subscription(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     sub_id = int(callback.data.split("_")[2])
     sub = await get_subscription_by_id(session, sub_id)
     if not sub or sub.user_id != callback.from_user.id:
-        await callback.answer("Подписка не найдена.", show_alert=True)
+        await callback.answer(get_text("sub_not_found", user_lang), show_alert=True)
         return
 
     await callback.answer()
-    text = format_sub_card(sub)
+    text = format_sub_card(sub, lang=user_lang)
     await callback.message.edit_text(
         text,
         parse_mode="HTML",
-        reply_markup=get_subscription_card_keyboard(sub.id, sub.is_active, sub.cancel_url),
+        reply_markup=get_subscription_card_keyboard(sub.id, sub.is_active, sub.cancel_url, lang=user_lang),
     )
 
 
@@ -353,22 +374,23 @@ async def cb_view_subscription(
 async def cb_toggle_subscription(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     sub_id = int(callback.data.split("_")[2])
     sub = await get_subscription_by_id(session, sub_id)
     if not sub or sub.user_id != callback.from_user.id:
-        await callback.answer("Подписка не найдена.", show_alert=True)
+        await callback.answer(get_text("sub_not_found", user_lang), show_alert=True)
         return
 
     updated_sub = await toggle_subscription_status(session, sub_id)
-    status_msg = "активирована" if updated_sub.is_active else "приостановлена"
-    await callback.answer(f"Подписка {status_msg}!")
+    status_msg = get_text("sub_status_activated", user_lang) if updated_sub.is_active else get_text("sub_status_paused", user_lang)
+    await callback.answer(status_msg)
 
-    text = format_sub_card(updated_sub)
+    text = format_sub_card(updated_sub, lang=user_lang)
     await callback.message.edit_text(
         text,
         parse_mode="HTML",
-        reply_markup=get_subscription_card_keyboard(updated_sub.id, updated_sub.is_active, updated_sub.cancel_url),
+        reply_markup=get_subscription_card_keyboard(updated_sub.id, updated_sub.is_active, updated_sub.cancel_url, lang=user_lang),
     )
 
 
@@ -376,18 +398,19 @@ async def cb_toggle_subscription(
 async def cb_delete_subscription_prompt(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     sub_id = int(callback.data.split("_")[2])
     sub = await get_subscription_by_id(session, sub_id)
     if not sub or sub.user_id != callback.from_user.id:
-        await callback.answer("Подписка не найдена.", show_alert=True)
+        await callback.answer(get_text("sub_not_found", user_lang), show_alert=True)
         return
 
     await callback.answer()
     await callback.message.edit_text(
-        f"Вы действительно хотите удалить подписку <b>{sub.service_name}</b>?",
+        get_text("delete_prompt", user_lang, name=sub.service_name),
         parse_mode="HTML",
-        reply_markup=get_delete_confirm_keyboard(sub_id),
+        reply_markup=get_delete_confirm_keyboard(sub_id, lang=user_lang),
     )
 
 
@@ -395,19 +418,20 @@ async def cb_delete_subscription_prompt(
 async def cb_confirm_delete(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     sub_id = int(callback.data.split("_")[2])
     deleted = await delete_subscription(session, sub_id)
     if deleted:
-        await callback.answer("Подписка удалена.", show_alert=True)
+        await callback.answer(get_text("sub_deleted_alert", user_lang), show_alert=True)
     else:
-        await callback.answer("Не удалось удалить подписку.", show_alert=True)
+        await callback.answer(get_text("sub_not_found", user_lang), show_alert=True)
 
     subs = await get_user_subscriptions(session, callback.from_user.id)
     await callback.message.edit_text(
-        f"📋 <b>Ваши подписки ({len(subs)}):</b>",
+        get_text("subs_list_title", user_lang, count=len(subs)),
         parse_mode="HTML",
-        reply_markup=get_subscriptions_list_keyboard(subs),
+        reply_markup=get_subscriptions_list_keyboard(subs, lang=user_lang),
     )
 
 
@@ -417,18 +441,19 @@ async def cb_confirm_delete(
 async def cb_edit_subscription(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     sub_id = int(callback.data.split("_")[2])
     sub = await get_subscription_by_id(session, sub_id)
     if not sub or sub.user_id != callback.from_user.id:
-        await callback.answer("Подписка не найдена.", show_alert=True)
+        await callback.answer(get_text("sub_not_found", user_lang), show_alert=True)
         return
 
     await callback.answer()
     await callback.message.edit_text(
-        f"Какое поле для подписки <b>{sub.service_name}</b> вы хотите изменить?",
+        get_text("edit_field_prompt", user_lang, name=sub.service_name),
         parse_mode="HTML",
-        reply_markup=get_edit_fields_keyboard(sub_id),
+        reply_markup=get_edit_fields_keyboard(sub_id, lang=user_lang),
     )
 
 
@@ -436,6 +461,7 @@ async def cb_edit_subscription(
 async def cb_edit_field_selected(
     callback: CallbackQuery,
     state: FSMContext,
+    user_lang: str = "ru",
 ) -> None:
     parts = callback.data.split("_")
     sub_id = int(parts[2])
@@ -445,27 +471,27 @@ async def cb_edit_field_selected(
 
     if field == "currency":
         await callback.message.edit_text(
-            "Выберите новую валюту:",
-            reply_markup=get_edit_currency_keyboard(sub_id),
+            get_text("select_new_currency", user_lang),
+            reply_markup=get_edit_currency_keyboard(sub_id, lang=user_lang),
         )
         return
 
     field_prompts = {
-        "name": "Введите новое <b>название сервиса</b>:",
-        "price": "Введите новую <b>стоимость</b> (число):",
-        "period": "Введите новый <b>интервал списания в днях</b> (например, 30 или 365):",
-        "date": "Введите новую <b>дату следующего списания</b> (ДД.ММ.ГГГГ):",
-        "url": "Введите новую <b>ссылку на отмену</b> (или отправьте '-' чтобы очистить):",
+        "name": get_text("prompt_edit_name", user_lang),
+        "price": get_text("prompt_edit_price", user_lang),
+        "period": get_text("prompt_edit_period", user_lang),
+        "date": get_text("prompt_edit_date", user_lang),
+        "url": get_text("prompt_edit_url", user_lang),
     }
 
-    prompt = field_prompts.get(field, "Введите новое значение:")
+    prompt = field_prompts.get(field, "...")
     await state.set_state(EditSubscriptionStates.edit_value)
-    await state.update_data(edit_sub_id=sub_id, edit_field=field)
+    await state.update_data(edit_sub_id=sub_id, edit_field=field, flow_lang=user_lang)
 
     await callback.message.answer(
         f"✏️ {prompt}",
         parse_mode="HTML",
-        reply_markup=get_cancel_keyboard(),
+        reply_markup=get_cancel_keyboard(user_lang),
     )
 
 
@@ -473,17 +499,18 @@ async def cb_edit_field_selected(
 async def cb_set_edit_currency(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     parts = callback.data.split("_")
     sub_id = int(parts[2])
     new_curr = parts[3]
 
     sub = await update_subscription(session, sub_id, currency=new_curr)
-    await callback.answer(f"Валюта изменена на {new_curr}")
+    await callback.answer(get_text("currency_changed_alert", user_lang, curr=new_curr))
     await callback.message.edit_text(
-        format_sub_card(sub),
+        format_sub_card(sub, lang=user_lang),
         parse_mode="HTML",
-        reply_markup=get_subscription_card_keyboard(sub.id, sub.is_active, sub.cancel_url),
+        reply_markup=get_subscription_card_keyboard(sub.id, sub.is_active, sub.cancel_url, lang=user_lang),
     )
 
 
@@ -492,36 +519,38 @@ async def process_edit_value(
     message: Message,
     state: FSMContext,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     data = await state.get_data()
     sub_id = data.get("edit_sub_id")
     field = data.get("edit_field")
+    lang = data.get("flow_lang", user_lang)
 
     update_kwargs = {}
 
     if field == "name":
-        valid, val, err = validate_service_name(message.text)
+        valid, val, err = validate_service_name(message.text, lang=lang)
         if not valid:
             await message.answer(f"⚠️ {err}", parse_mode="HTML")
             return
         update_kwargs["service_name"] = val
 
     elif field == "price":
-        valid, val, err = validate_price(message.text)
+        valid, val, err = validate_price(message.text, lang=lang)
         if not valid:
             await message.answer(f"⚠️ {err}", parse_mode="HTML")
             return
         update_kwargs["price"] = val
 
     elif field == "period":
-        valid, val, err = validate_period_days(message.text)
+        valid, val, err = validate_period_days(message.text, lang=lang)
         if not valid:
             await message.answer(f"⚠️ {err}", parse_mode="HTML")
             return
         update_kwargs["period_days"] = val
 
     elif field == "date":
-        valid, val, err = validate_billing_date(message.text)
+        valid, val, err = validate_billing_date(message.text, lang=lang)
         if not valid:
             await message.answer(f"⚠️ {err}", parse_mode="HTML")
             return
@@ -532,7 +561,7 @@ async def process_edit_value(
         if clean == "-":
             update_kwargs["cancel_url"] = None
         else:
-            valid, val, err = validate_cancel_url(clean)
+            valid, val, err = validate_cancel_url(clean, lang=lang)
             if not valid:
                 await message.answer(f"⚠️ {err}", parse_mode="HTML")
                 return
@@ -542,9 +571,9 @@ async def process_edit_value(
     updated_sub = await update_subscription(session, sub_id, **update_kwargs)
     await send_clean_message(
         message,
-        "✅ <b>Изменения сохранены!</b>\n\n" + format_sub_card(updated_sub),
+        get_text("changes_saved", lang) + format_sub_card(updated_sub, lang=lang),
         parse_mode="HTML",
-        reply_markup=get_subscription_card_keyboard(updated_sub.id, updated_sub.is_active, updated_sub.cancel_url),
+        reply_markup=get_subscription_card_keyboard(updated_sub.id, updated_sub.is_active, updated_sub.cancel_url, lang=lang),
     )
 
 
@@ -554,18 +583,17 @@ async def process_edit_value(
 async def cb_mark_paid(
     callback: CallbackQuery,
     session: AsyncSession,
+    user_lang: str = "ru",
 ) -> None:
     sub_id = int(callback.data.split("_")[1])
     sub = await mark_subscription_paid(session, sub_id)
     if not sub:
-        await callback.answer("Подписка не найдена.", show_alert=True)
+        await callback.answer(get_text("sub_not_found", user_lang), show_alert=True)
         return
 
-    await callback.answer("Оплата отмечена!")
+    await callback.answer(get_text("paid_marked_alert", user_lang))
     new_date_str = sub.next_billing_date.strftime("%d.%m.%Y")
     await callback.message.edit_text(
-        f"✅ <b>Оплата отмечена!</b>\n\n"
-        f"Сервис <b>{sub.service_name}</b> оплачен.\n"
-        f"Следующее списание запланировано на <b>{new_date_str}</b>.",
+        get_text("paid_marked_text", user_lang, name=sub.service_name, date=new_date_str),
         parse_mode="HTML",
     )

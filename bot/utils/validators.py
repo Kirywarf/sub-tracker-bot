@@ -2,22 +2,23 @@ import re
 from datetime import datetime, date
 from typing import Tuple, Optional
 from urllib.parse import urlparse
+from bot.locales import get_text
 
 
-def validate_service_name(text: str) -> Tuple[bool, Optional[str], Optional[str]]:
+def validate_service_name(text: str, lang: str = "ru") -> Tuple[bool, Optional[str], Optional[str]]:
     """
     Validates service name.
     Returns (is_valid, cleaned_name, error_message).
     """
     cleaned = text.strip()
     if not cleaned:
-        return False, None, "Название сервиса не может быть пустым. Пожалуйста, введите название."
+        return False, None, get_text("val_err_name_empty", lang)
     if len(cleaned) > 100:
-        return False, None, "Слишком длинное название (максимум 100 символов). Попробуйте сократить."
+        return False, None, get_text("val_err_name_toolong", lang)
     return True, cleaned, None
 
 
-def validate_price(text: str) -> Tuple[bool, Optional[float], Optional[str]]:
+def validate_price(text: str, lang: str = "ru") -> Tuple[bool, Optional[float], Optional[str]]:
     """
     Validates price input. Supports commas and spaces, e.g. '299,50' or '1 200'.
     Returns (is_valid, price_float, error_message).
@@ -26,35 +27,35 @@ def validate_price(text: str) -> Tuple[bool, Optional[float], Optional[str]]:
     try:
         val = float(cleaned)
     except ValueError:
-        return False, None, "Некорректный формат суммы. Введите число (например, <code>299</code> или <code>850.50</code>)."
+        return False, None, get_text("val_err_price_invalid", lang)
 
     if val <= 0:
-        return False, None, "Сумма списания должна быть больше нуля."
+        return False, None, get_text("val_err_price_positive", lang)
     if val > 10_000_000:
-        return False, None, "Слишком большая сумма (максимум 10 000 000). Проверьте введенное значение."
+        return False, None, get_text("val_err_price_toobig", lang)
 
     return True, round(val, 2), None
 
 
-def validate_period_days(text: str) -> Tuple[bool, Optional[int], Optional[str]]:
+def validate_period_days(text: str, lang: str = "ru") -> Tuple[bool, Optional[int], Optional[str]]:
     """
     Validates interval in days.
     Returns (is_valid, days_int, error_message).
     """
     cleaned = text.strip()
     if not cleaned.isdigit():
-        return False, None, "Интервал должен быть целым положительным числом дней (например, <code>30</code> или <code>14</code>)."
+        return False, None, get_text("val_err_period_digits", lang)
 
     val = int(cleaned)
     if val < 1:
-        return False, None, "Интервал должен быть не менее 1 дня."
+        return False, None, get_text("val_err_period_min", lang)
     if val > 3650:
-        return False, None, "Интервал не может превышать 3650 дней (10 лет)."
+        return False, None, get_text("val_err_period_max", lang)
 
     return True, val, None
 
 
-def validate_billing_date(text: str) -> Tuple[bool, Optional[date], Optional[str]]:
+def validate_billing_date(text: str, lang: str = "ru") -> Tuple[bool, Optional[date], Optional[str]]:
     """
     Validates date in DD.MM.YYYY format.
     Returns (is_valid, date_obj, error_message).
@@ -66,17 +67,17 @@ def validate_billing_date(text: str) -> Tuple[bool, Optional[date], Optional[str
         return (
             False,
             None,
-            "Неверный формат даты. Пожалуйста, укажите дату в формате <code>ДД.ММ.ГГГГ</code> (например, <code>25.12.2026</code>).",
+            get_text("val_err_date_format", lang),
         )
 
-    # Allow dates starting from today or reasonable past (e.g. within last 30 days is acceptable for setting up)
+    # Allow dates starting from reasonable years
     if parsed_dt.year < 2000 or parsed_dt.year > 2100:
-        return False, None, "Год должен быть в диапазоне от 2000 до 2100."
+        return False, None, get_text("val_err_date_range", lang)
 
     return True, parsed_dt, None
 
 
-def validate_cancel_url(text: str) -> Tuple[bool, Optional[str], Optional[str]]:
+def validate_cancel_url(text: str, lang: str = "ru") -> Tuple[bool, Optional[str], Optional[str]]:
     """
     Validates URL for canceling subscription.
     Must start with http:// or https:// and have valid domain.
@@ -87,6 +88,6 @@ def validate_cancel_url(text: str) -> Tuple[bool, Optional[str], Optional[str]]:
         return (
             False,
             None,
-            "Некорректная ссылка! Ссылка должна начинаться с <code>https://</code> или <code>http://</code> (например: <code>https://plus.yandex.ru</code>).",
+            get_text("val_err_url", lang),
         )
     return True, cleaned, None

@@ -13,6 +13,7 @@ class User(Base):
 
     telegram_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    language: Mapped[str] = mapped_column(String(10), default="ru", nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), default="UTC+3", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
