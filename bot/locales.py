@@ -470,6 +470,18 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "Subscription not found.",
         "pl": "Nie znaleziono subskrypcji.",
     },
+    "btn_renew": {
+        "ru": "🔄 Продлить",
+        "be": "🔄 Падоўжыць",
+        "en": "🔄 Renew",
+        "pl": "🔄 Przedłuż",
+    },
+    "sub_renewed_alert": {
+        "ru": "✅ Подписка продлена до {date}!",
+        "be": "✅ Падпіска падоўжана да {date}!",
+        "en": "✅ Subscription renewed until {date}!",
+        "pl": "✅ Subskrypcja przedłużona do {date}!",
+    },
     "sub_status_activated": {
         "ru": "Подписка активирована!",
         "be": "Падпіска актывавана!",

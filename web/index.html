@@ -571,10 +571,12 @@
         in_days: "через {d} дн.",
         days_short: "дн.",
         cancel_short: "Отменить",
+        renew: "Продлить",
         confirm_delete: "Удалить эту подписку?",
         toast_sound_on: "Звук включен",
         toast_sound_off: "Звук отключен",
         toast_sub_saved: "Подписка сохранена",
+        toast_sub_renewed: "Подписка продлена",
         toast_sub_deleted: "Подписка удалена",
         toast_sub_active: "Подписка активна",
         toast_sub_paused: "Подписка на паузе",
@@ -623,10 +625,12 @@
         in_days: "праз {d} дн.",
         days_short: "дн.",
         cancel_short: "Адмяніць",
+        renew: "Падоўжыць",
         confirm_delete: "Выдаліць гэтую падпіску?",
         toast_sound_on: "Гук уключаны",
         toast_sound_off: "Гук адключаны",
         toast_sub_saved: "Падпіска захавана",
+        toast_sub_renewed: "Падпіска падоўжана",
         toast_sub_deleted: "Падпіска выдалена",
         toast_sub_active: "Падпіска актыўная",
         toast_sub_paused: "Падпіска на паўзе",
@@ -675,10 +679,12 @@
         in_days: "in {d} d.",
         days_short: "d.",
         cancel_short: "Cancel",
+        renew: "Renew",
         confirm_delete: "Delete this subscription?",
         toast_sound_on: "Sound ON",
         toast_sound_off: "Sound OFF",
         toast_sub_saved: "Subscription saved",
+        toast_sub_renewed: "Subscription renewed",
         toast_sub_deleted: "Subscription deleted",
         toast_sub_active: "Subscription active",
         toast_sub_paused: "Subscription paused",
@@ -727,10 +733,12 @@
         in_days: "za {d} dni",
         days_short: "dni",
         cancel_short: "Anuluj",
+        renew: "Przedłuż",
         confirm_delete: "Usunąć tę subskrypcję?",
         toast_sound_on: "Dźwięk włączony",
         toast_sound_off: "Dźwięk wyłączony",
         toast_sub_saved: "Subskrypcja zapisana",
+        toast_sub_renewed: "Subskrypcja przedłużona",
         toast_sub_deleted: "Subskrypcja usunięta",
         toast_sub_active: "Subskrypcja aktywna",
         toast_sub_paused: "Subskrypcja wstrzymana",
@@ -1560,6 +1568,11 @@
                 </div>
               </label>
 
+              <!-- Renew Button -->
+              <button onclick="renewSub(${sub.id}, event)" title="${dict.renew}" class="w-7 h-7 rounded-full bg-white/5 hover:bg-[#30d158]/20 text-[#86868b] hover:text-[#30d158] flex items-center justify-center transition text-xs active:scale-90">
+                🔄
+              </button>
+
               <button onclick="deleteSub(${sub.id}, event)" class="w-7 h-7 rounded-full bg-white/5 hover:bg-[#ff453a]/20 text-[#86868b] hover:text-[#ff453a] flex items-center justify-center transition text-xs active:scale-90">
                 ✕
               </button>
@@ -1570,6 +1583,31 @@
         attach3DTilt(card);
         container.appendChild(card);
       });
+    }
+
+    async function renewSub(subId, event) {
+      const dict = I18N[state.lang] || I18N.ru;
+      AudioFX.click();
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+      if (particleSystem && event) {
+        const x = event.clientX || window.innerWidth / 2;
+        const y = event.clientY || window.innerHeight / 2;
+        particleSystem.burst(x, y, '#30d158', 25);
+      }
+
+      try {
+        const res = await fetch(`/api/subscriptions/${subId}/renew`, { method: 'POST' });
+        const resData = await res.json();
+        if (resData.status === 'ok') {
+          showToast(dict.toast_sub_renewed, '🔄');
+          loadData();
+        } else {
+          showToast(resData.message || 'Error', '⚠️');
+        }
+      } catch (e) {
+        console.error('Failed to renew:', e);
+      }
     }
 
     async function toggleSub(subId, checkbox, event) {

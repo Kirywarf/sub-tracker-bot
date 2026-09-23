@@ -35,6 +35,7 @@ from database.requests import (
     toggle_subscription_status,
     delete_subscription,
     mark_subscription_paid,
+    renew_subscription,
 )
 
 router = Router(name="subscriptions")
@@ -392,6 +393,31 @@ async def cb_toggle_subscription(
         parse_mode="HTML",
         reply_markup=get_subscription_card_keyboard(updated_sub.id, updated_sub.is_active, updated_sub.cancel_url, lang=user_lang),
     )
+
+
+@router.callback_query(F.data.startswith("renew_sub_"))
+async def cb_renew_subscription(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    user_lang: str = "ru",
+) -> None:
+    sub_id = int(callback.data.split("_")[2])
+    sub = await get_subscription_by_id(session, sub_id)
+    if not sub or sub.user_id != callback.from_user.id:
+        await callback.answer(get_text("sub_not_found", user_lang), show_alert=True)
+        return
+
+    updated_sub = await renew_subscription(session, sub_id)
+    new_date_str = updated_sub.next_billing_date.strftime("%d.%m.%Y")
+    await callback.answer(get_text("sub_renewed_alert", user_lang, date=new_date_str))
+
+    text = format_sub_card(updated_sub, lang=user_lang)
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=get_subscription_card_keyboard(updated_sub.id, updated_sub.is_active, updated_sub.cancel_url, lang=user_lang),
+    )
+
 
 
 @router.callback_query(F.data.startswith("delete_sub_"))

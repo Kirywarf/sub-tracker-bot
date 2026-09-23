@@ -9,6 +9,7 @@ from database.requests import (
     toggle_subscription_status,
     delete_subscription,
     mark_subscription_paid,
+    renew_subscription,
     get_subscriptions_due_for_reminder,
 )
 
@@ -145,3 +146,26 @@ async def test_delete_subscription(test_session):
 
     fetched = await get_subscription_by_id(test_session, sub.id)
     assert fetched is None
+
+
+@pytest.mark.asyncio
+async def test_renew_subscription(test_session):
+    await get_or_create_user(test_session, telegram_id=7001)
+    sub = await add_subscription(
+        session=test_session,
+        user_id=7001,
+        service_name="Disney+",
+        price=30.0,
+        currency="PLN",
+        period_days=30,
+        next_billing_date=date.today(),
+    )
+    # Pause subscription
+    await toggle_subscription_status(test_session, sub.id)
+    assert sub.is_active is False
+
+    # Renew should reactivate and advance billing date
+    renewed = await renew_subscription(test_session, sub.id)
+    assert renewed.is_active is True
+    assert renewed.next_billing_date == date.today() + timedelta(days=30)
+

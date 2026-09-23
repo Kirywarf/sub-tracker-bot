@@ -22,6 +22,7 @@ from bot.handlers.subscriptions import (
     cb_view_subscription,
     cb_toggle_subscription,
     cb_confirm_delete,
+    cb_renew_subscription,
     cb_mark_paid,
     cb_set_edit_currency,
     process_edit_value,
@@ -277,6 +278,32 @@ async def test_mark_paid_callback(test_session):
     cb.answer.assert_called_once()
     cb.message.edit_text.assert_called_once()
     assert "Оплата отмечена" in cb.message.edit_text.call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_renew_subscription_callback(test_session):
+    await get_or_create_user(test_session, telegram_id=12345)
+    sub = await add_subscription(
+        session=test_session,
+        user_id=12345,
+        service_name="Apple Music",
+        price=169.0,
+        currency="RUB",
+        period_days=30,
+        next_billing_date=date(2026, 10, 1),
+    )
+
+    cb = make_mock_callback_query(f"renew_sub_{sub.id}")
+    await cb_renew_subscription(cb, test_session)
+
+    cb.answer.assert_called_once()
+    assert "продлена" in cb.answer.call_args[0][0]
+    cb.message.edit_text.assert_called_once()
+    assert "Apple Music" in cb.message.edit_text.call_args[0][0]
+
+    reloaded = await get_subscription_by_id(test_session, sub.id)
+    assert reloaded.next_billing_date == date(2026, 10, 31)
+
 
 
 @pytest.mark.asyncio

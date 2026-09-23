@@ -93,3 +93,53 @@ async def test_webapp_endpoints():
         assert api_data["metrics"]["total_annual"] > 0
     finally:
         await client.close()
+
+
+@pytest.mark.asyncio
+async def test_renew_subscription_api(test_session, monkeypatch):
+    import main
+    from main import api_renew_subscription, cors_middleware
+    from database.requests import get_or_create_user, add_subscription
+    from datetime import date
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def mock_session_factory():
+        yield test_session
+
+    monkeypatch.setattr(main, 'async_session_factory', mock_session_factory)
+
+    await get_or_create_user(test_session, telegram_id=925951839)
+    sub = await add_subscription(
+        session=test_session,
+        user_id=925951839,
+        service_name="TestRenew",
+        price=10.0,
+        currency="USD",
+        period_days=30,
+        next_billing_date=date(2026, 10, 1),
+    )
+
+    app = web.Application(middlewares=[cors_middleware])
+    app.router.add_post('/api/subscriptions/{id}/renew', api_renew_subscription)
+
+    from aiohttp.test_utils import TestClient, TestServer
+    server = TestServer(app)
+    client = TestClient(server)
+    await client.start_server()
+
+    try:
+        resp = await client.post(f'/api/subscriptions/{sub.id}/renew')
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["status"] == "ok"
+        assert data["sub_id"] == sub.id
+        assert data["next_billing_date"] == "2026-10-31"
+
+        # Not found case
+        resp_404 = await client.post('/api/subscriptions/999999/renew')
+        assert resp_404.status == 404
+    finally:
+        await client.close()
+
+

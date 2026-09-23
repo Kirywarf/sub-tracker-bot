@@ -19,6 +19,7 @@ from database.requests import (
     toggle_subscription_status,
     delete_subscription,
     get_or_create_user,
+    renew_subscription,
 )
 from bot.handlers.analytics import calculate_unified_metrics
 from services.currency import get_exchange_rates
@@ -166,6 +167,23 @@ async def api_delete_subscription(request: web.Request) -> web.Response:
         return web.json_response({"status": "error", "message": str(e)}, status=400)
 
 
+async def api_renew_subscription(request: web.Request) -> web.Response:
+    try:
+        sub_id = int(request.match_info["id"])
+        async with async_session_factory() as session:
+            sub = await renew_subscription(session, sub_id)
+            if not sub:
+                return web.json_response({"status": "error", "message": "Not found"}, status=404)
+            return web.json_response({
+                "status": "ok",
+                "sub_id": sub.id,
+                "next_billing_date": sub.next_billing_date.isoformat(),
+            })
+    except Exception as e:
+        logger.error(f"Error renewing subscription via API: {e}")
+        return web.json_response({"status": "error", "message": str(e)}, status=400)
+
+
 @web.middleware
 async def cors_middleware(request: web.Request, handler):
     if request.method == "OPTIONS":
@@ -188,6 +206,7 @@ async def create_app(bot: Bot, dp: Dispatcher) -> web.Application:
     app.router.add_get("/api/subscriptions", api_get_subscriptions)
     app.router.add_post("/api/subscriptions", api_create_subscription)
     app.router.add_post("/api/subscriptions/{id}/toggle", api_toggle_subscription)
+    app.router.add_post("/api/subscriptions/{id}/renew", api_renew_subscription)
     app.router.add_delete("/api/subscriptions/{id}", api_delete_subscription)
 
     webhook_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
@@ -204,6 +223,7 @@ async def start_health_server(port: int) -> web.AppRunner:
     app.router.add_get("/api/subscriptions", api_get_subscriptions)
     app.router.add_post("/api/subscriptions", api_create_subscription)
     app.router.add_post("/api/subscriptions/{id}/toggle", api_toggle_subscription)
+    app.router.add_post("/api/subscriptions/{id}/renew", api_renew_subscription)
     app.router.add_delete("/api/subscriptions/{id}", api_delete_subscription)
     runner = web.AppRunner(app)
     await runner.setup()

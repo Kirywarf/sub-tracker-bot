@@ -179,9 +179,13 @@ async def mark_subscription_paid(
         new_date += timedelta(days=sub.period_days)
 
     sub.next_billing_date = new_date
+    sub.is_active = True
     await session.commit()
     await session.refresh(sub)
     return sub
+
+
+renew_subscription = mark_subscription_paid
 
 
 async def get_subscriptions_due_for_reminder(

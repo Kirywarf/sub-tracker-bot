@@ -7,6 +7,7 @@ from aiogram.fsm.storage.base import StorageKey
 
 from bot.locales import get_text, normalize_language, get_language_keyboard, SUPPORTED_LANGUAGES
 from bot.keyboards.reply import get_main_menu_keyboard, get_cancel_keyboard, get_webapp_url
+from bot.keyboards.inline import get_subscription_card_keyboard
 from bot.utils.validators import (
     validate_service_name,
     validate_price,
@@ -309,4 +310,20 @@ def test_reminder_keyboard_i18n():
     kb_pl = build_reminder_keyboard(1, "https://example.com/cancel", lang="pl")
     assert kb_pl.inline_keyboard[0][0].text == "🔗 Anuluj subskrypcję"
     assert kb_pl.inline_keyboard[1][0].text == "✅ Oznacz jako opłacone"
+
+
+def test_subscription_card_keyboard_i18n():
+    for lang, expected_renew in [
+        ("ru", "🔄 Продлить"),
+        ("be", "🔄 Падоўжыць"),
+        ("en", "🔄 Renew"),
+        ("pl", "🔄 Przedłuż"),
+    ]:
+        kb = get_subscription_card_keyboard(sub_id=1, is_active=True, cancel_url=None, lang=lang)
+        buttons = [btn.text for row in kb.inline_keyboard for btn in row]
+        assert expected_renew in buttons
+        assert any(btn.callback_data == "renew_sub_1" for row in kb.inline_keyboard for btn in row)
+        alert = get_text("sub_renewed_alert", lang, date="01.01.2027")
+        assert "01.01.2027" in alert
+
 

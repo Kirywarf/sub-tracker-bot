@@ -79,11 +79,14 @@ def get_subscription_card_keyboard(
 
     toggle_text = get_text("btn_pause", lang) if is_active else get_text("btn_activate", lang)
     buttons.append([
-        InlineKeyboardButton(text=get_text("btn_edit", lang), callback_data=f"edit_sub_{sub_id}"),
+        InlineKeyboardButton(text=get_text("btn_renew", lang), callback_data=f"renew_sub_{sub_id}"),
         InlineKeyboardButton(text=toggle_text, callback_data=f"toggle_sub_{sub_id}"),
     ])
     buttons.append([
+        InlineKeyboardButton(text=get_text("btn_edit", lang), callback_data=f"edit_sub_{sub_id}"),
         InlineKeyboardButton(text=get_text("btn_delete", lang), callback_data=f"delete_sub_{sub_id}"),
+    ])
+    buttons.append([
         InlineKeyboardButton(text=get_text("btn_back_to_list", lang), callback_data="list_subs"),
     ])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
