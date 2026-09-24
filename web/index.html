@@ -15,6 +15,9 @@
       darkMode: 'class',
       theme: {
         extend: {
+          screens: {
+            'xs': '380px',
+          },
           colors: {
             apple: {
               black: '#000000',
@@ -42,6 +45,13 @@
   </script>
 
   <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+    }
+
     * {
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
@@ -57,7 +67,16 @@
     }
 
     input, button, select, textarea {
-      font-size: 16px; /* Prevents mobile browser zoom */
+      font-size: 16px; /* Prevents mobile browser auto-zoom */
+    }
+
+    /* Hide scrollbars for clean mobile appearance */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
 
     /* Apple.com Cinematic Ambient Lighting */
@@ -131,7 +150,7 @@
       -webkit-backdrop-filter: blur(35px) saturate(190%);
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.65), inset 0 1px 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.5);
-      border-radius: 26px;
+      border-radius: 24px;
       position: relative;
       overflow: hidden;
       transform-style: preserve-3d;
@@ -157,7 +176,7 @@
 
     /* Apple Header Bar */
     .glass-header {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.82);
       backdrop-filter: blur(28px) saturate(190%);
       -webkit-backdrop-filter: blur(28px) saturate(190%);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -166,11 +185,14 @@
 
     /* Apple Floating Dock */
     .glass-dock {
-      background: rgba(24, 24, 28, 0.82);
+      background: rgba(24, 24, 28, 0.86);
       backdrop-filter: blur(36px) saturate(200%);
       -webkit-backdrop-filter: blur(36px) saturate(200%);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    }
+    .dock-container {
+      bottom: calc(0.9rem + var(--sab));
     }
 
     .donut-slice {
@@ -220,13 +242,13 @@
       }
     }
 
-    /* Apple-Style Toggle Switch */
+    /* Apple-Style iOS Toggle Switch */
     .cyber-toggle:checked + .cyber-toggle-track {
       background-color: #30d158;
-      box-shadow: 0 0 12px rgba(48, 209, 88, 0.45);
+      box-shadow: 0 0 10px rgba(48, 209, 88, 0.45);
     }
     .cyber-toggle:checked + .cyber-toggle-track .cyber-toggle-thumb {
-      transform: translateX(20px);
+      transform: translateX(18px);
       background-color: #ffffff;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
@@ -236,7 +258,7 @@
       transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    /* Monthly Calendar Tooltip (Isolated Single Column Hover) */
+    /* Monthly Calendar Tooltip (Edge-clamped for mobile) */
     .bar-col {
       position: relative;
     }
@@ -264,10 +286,30 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+
+    /* Clamping for first and last month tooltips so they don't clip off-screen */
+    .bar-col:first-child .bar-tooltip {
+      left: 0;
+      transform: translateX(0) translateY(4px);
+    }
+    .bar-col:first-child:hover .bar-tooltip,
+    .bar-col:first-child.active-bar .bar-tooltip {
+      transform: translateX(0) translateY(0);
+    }
+
+    .bar-col:last-child .bar-tooltip {
+      left: auto;
+      right: 0;
+      transform: translateX(0) translateY(4px);
+    }
+    .bar-col:last-child:hover .bar-tooltip,
+    .bar-col:last-child.active-bar .bar-tooltip {
+      transform: translateX(0) translateY(0);
+    }
   </style>
 </head>
 
-<body class="min-h-screen bg-black text-[#f5f5f7] flex flex-col pb-32 overflow-x-hidden selection:bg-[#0071e3] selection:text-white">
+<body class="min-h-screen bg-black text-[#f5f5f7] flex flex-col pb-36 overflow-x-hidden selection:bg-[#0071e3] selection:text-white">
 
   <!-- Apple Cinematic Ambient Lighting -->
   <div class="ambient-aurora">
@@ -285,41 +327,48 @@
     <span id="toast-message" class="tracking-tight text-white/90">Успешно</span>
   </div>
 
-  <!-- Apple Top Navigation Bar -->
-  <header class="sticky top-0 z-40 glass-header px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center space-x-2.5">
-      <div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shadow-sm">
-        <span class="text-base text-white leading-none font-semibold"></span>
-      </div>
-      <div>
-        <div class="text-sm font-bold tracking-tight text-white">
-          <span>StopPay</span>
+  <!-- Apple Top Navigation Bar (Mobile Two-Tier Architecture) -->
+  <header class="sticky top-0 z-40 glass-header px-4 py-2.5 space-y-2.5">
+    <!-- Row 1: Brand Info & Sound FX -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shadow-sm flex-shrink-0">
+          <span class="text-base text-white leading-none font-semibold"></span>
         </div>
-        <div id="user-badge" class="text-[11px] font-normal text-[#86868b] truncate max-w-[140px]">Личный кабинет</div>
+        <div>
+          <div class="text-sm font-bold tracking-tight text-white flex items-center space-x-1.5">
+            <span>StopPay</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60 font-medium">Mini App</span>
+          </div>
+          <div id="user-badge" class="text-[11px] font-normal text-[#86868b] truncate max-w-[150px]">Личный кабинет</div>
+        </div>
+      </div>
+
+      <!-- Right: Sound FX Button -->
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleSound()" id="sound-toggle-btn" title="Sound" class="h-8 px-2.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center space-x-1.5 text-xs text-white/80 transition active:scale-95">
+          <span id="sound-icon">🔊</span>
+          <span class="text-[10px] font-medium text-white/50 hidden xs:inline">FX</span>
+        </button>
       </div>
     </div>
 
-    <!-- Header Actions: Sound Toggle + Language Switcher + Currency Switcher -->
-    <div class="flex items-center space-x-1.5 sm:space-x-2">
-      <!-- Sound FX Toggle -->
-      <button onclick="toggleSound()" id="sound-toggle-btn" title="Sound" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-sm text-white/70 transition active:scale-95">
-        <span id="sound-icon">🔊</span>
-      </button>
-
-      <!-- Language Selector Glass Bar -->
-      <div class="flex items-center bg-[#1c1c1e]/90 p-0.5 rounded-xl border border-white/10 text-[10px] font-medium shadow-inner">
-        <button onclick="changeLanguage('ru')" id="lang-btn-ru" class="lang-pill px-1.5 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm">RU</button>
-        <button onclick="changeLanguage('be')" id="lang-btn-be" class="lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white">BE</button>
-        <button onclick="changeLanguage('en')" id="lang-btn-en" class="lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white">EN</button>
-        <button onclick="changeLanguage('pl')" id="lang-btn-pl" class="lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white">PL</button>
+    <!-- Row 2: Symmetrical Dual Mobile Segmented Controls (Currency & Language) -->
+    <div class="grid grid-cols-2 gap-2 pt-0.5">
+      <!-- Currency Switcher Segmented Glass Bar -->
+      <div class="flex items-center bg-[#1c1c1e]/90 p-0.5 rounded-xl border border-white/10 shadow-inner">
+        <button onclick="changeCurrency('RUB')" id="curr-btn-RUB" class="curr-pill flex-1 py-1.5 text-center rounded-lg transition bg-white/20 text-white font-semibold text-xs shadow-sm active:scale-95">₽</button>
+        <button onclick="changeCurrency('BYN')" id="curr-btn-BYN" class="curr-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-xs active:scale-95">Br</button>
+        <button onclick="changeCurrency('USD')" id="curr-btn-USD" class="curr-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-xs active:scale-95">$</button>
+        <button onclick="changeCurrency('PLN')" id="curr-btn-PLN" class="curr-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-xs active:scale-95">zł</button>
       </div>
 
-      <!-- Currency Selector Segmented Glass Bar -->
-      <div class="flex items-center bg-[#1c1c1e]/90 p-0.5 rounded-xl border border-white/10 text-[11px] font-medium shadow-inner">
-        <button onclick="changeCurrency('RUB')" id="curr-btn-RUB" class="curr-pill px-2 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm">₽</button>
-        <button onclick="changeCurrency('BYN')" id="curr-btn-BYN" class="curr-pill px-2 py-1 rounded-lg transition text-white/50 hover:text-white">Br</button>
-        <button onclick="changeCurrency('USD')" id="curr-btn-USD" class="curr-pill px-2 py-1 rounded-lg transition text-white/50 hover:text-white">$</button>
-        <button onclick="changeCurrency('PLN')" id="curr-btn-PLN" class="curr-pill px-2 py-1 rounded-lg transition text-white/50 hover:text-white">zł</button>
+      <!-- Language Selector Glass Bar -->
+      <div class="flex items-center bg-[#1c1c1e]/90 p-0.5 rounded-xl border border-white/10 shadow-inner">
+        <button onclick="changeLanguage('ru')" id="lang-btn-ru" class="lang-pill flex-1 py-1.5 text-center rounded-lg transition bg-white/20 text-white font-semibold text-[11px] shadow-sm active:scale-95">RU</button>
+        <button onclick="changeLanguage('be')" id="lang-btn-be" class="lang-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-[11px] active:scale-95">BE</button>
+        <button onclick="changeLanguage('en')" id="lang-btn-en" class="lang-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-[11px] active:scale-95">EN</button>
+        <button onclick="changeLanguage('pl')" id="lang-btn-pl" class="lang-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-[11px] active:scale-95">PL</button>
       </div>
     </div>
   </header>
@@ -331,7 +380,7 @@
     <section id="view-analytics" class="space-y-4">
 
       <!-- Apple Card Donut Overview Widget -->
-      <div class="glass-card p-6 text-center relative">
+      <div class="glass-card p-5 sm:p-6 text-center relative">
         <div class="card-glare"></div>
 
         <div class="relative z-10">
@@ -346,7 +395,7 @@
           </div>
 
           <!-- SVG Donut Chart with Center Display -->
-          <div class="relative w-52 h-52 mx-auto my-3 flex items-center justify-center">
+          <div class="relative w-48 h-48 sm:w-52 sm:h-52 mx-auto my-3 flex items-center justify-center">
             
             <svg viewBox="0 0 160 160" class="w-full h-full -rotate-90">
               <circle cx="80" cy="80" r="62" stroke="rgba(255, 255, 255, 0.06)" stroke-width="14" fill="none" />
@@ -367,8 +416,8 @@
             </div>
           </div>
 
-          <!-- Distribution breakdown pills -->
-          <div id="services-breakdown" class="mt-5 pt-4 border-t border-white/[0.08] grid grid-cols-2 gap-2 text-left text-xs">
+          <!-- Distribution breakdown list -->
+          <div id="services-breakdown" class="mt-5 pt-4 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-2 gap-2 text-left text-xs">
           </div>
         </div>
       </div>
@@ -404,41 +453,41 @@
           <div id="i18n-manage-title" class="text-[10px] font-bold text-[#86868b] tracking-wider uppercase">Управление</div>
           <h2 id="i18n-your-subs-title" class="text-base font-bold text-white">Ваши подписки</h2>
         </div>
-        <button onclick="openAddModal(event)" class="flex items-center space-x-1.5 text-xs font-semibold text-white bg-[#0071e3] hover:bg-[#0077ed] px-3.5 py-1.5 rounded-full transition shadow-md active:scale-95">
+        <button onclick="openAddModal(event)" class="flex items-center space-x-1.5 text-xs font-semibold text-white bg-[#0071e3] hover:bg-[#0077ed] px-4 py-2 rounded-full transition shadow-md active:scale-95">
           <span class="text-base leading-none">＋</span>
           <span id="i18n-add-sub-btn-text">Добавить</span>
         </button>
       </div>
 
       <!-- Dynamic Subscriptions Container -->
-      <div id="subs-list-container" class="space-y-2.5">
+      <div id="subs-list-container" class="space-y-3">
       </div>
     </section>
 
   </main>
 
   <!-- Bottom Floating Capsule Dock (Apple Style) -->
-  <nav class="fixed bottom-4 inset-x-4 max-w-sm mx-auto z-40">
+  <nav class="fixed dock-container inset-x-4 max-w-sm mx-auto z-40">
     <div class="glass-dock rounded-full p-1.5 shadow-2xl flex items-center justify-around relative">
-      <button onclick="switchTab('analytics')" id="nav-analytics" class="dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white bg-white/15 font-semibold">
+      <button onclick="switchTab('analytics')" id="nav-analytics" class="dock-pill flex-1 flex flex-col items-center py-2.5 rounded-full transition text-white bg-white/15 font-semibold active:scale-95">
         <span class="text-base leading-none">📊</span>
-        <span id="i18n-dock-overview" class="text-[10px] mt-1">Обзор</span>
+        <span id="i18n-dock-overview" class="text-[11px] mt-1 font-medium">Обзор</span>
       </button>
 
-      <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white/50 hover:text-white font-medium">
+      <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="dock-pill flex-1 flex flex-col items-center py-2.5 rounded-full transition text-white/50 hover:text-white font-medium active:scale-95">
         <span class="text-base leading-none">📋</span>
-        <span id="i18n-dock-subs" class="text-[10px] mt-1">Подписки</span>
+        <span id="i18n-dock-subs" class="text-[11px] mt-1 font-medium">Подписки</span>
       </button>
 
-      <button onclick="openAddModal(event)" class="dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-[#2997ff] font-semibold active:scale-95 hover:text-white">
+      <button onclick="openAddModal(event)" class="dock-pill flex-1 flex flex-col items-center py-2.5 rounded-full transition text-[#2997ff] hover:text-white font-semibold active:scale-95">
         <span class="text-base leading-none font-bold">＋</span>
-        <span id="i18n-dock-create" class="text-[10px] mt-1">Создать</span>
+        <span id="i18n-dock-create" class="text-[11px] mt-1 font-medium">Создать</span>
       </button>
     </div>
   </nav>
 
   <!-- Add Subscription Bottom Sheet Modal -->
-  <div id="add-modal-overlay" onclick="closeAddModal(event)" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden opacity-0 transition-opacity duration-300">
+  <div id="add-modal-overlay" onclick="closeAddModal(event)" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden opacity-0 transition-opacity duration-300">
     <div onclick="event.stopPropagation()" id="add-modal-content" class="sheet-modal hidden-sheet w-full max-w-md bg-[#141418] border-t sm:border border-white/15 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto pb-12">
       
       <!-- Sheet Handle -->
@@ -448,23 +497,23 @@
         <div class="flex items-center space-x-2">
           <h3 id="i18n-modal-title" class="text-base font-bold text-white">Новая подписка</h3>
         </div>
-        <button type="button" onclick="closeAddModal()" class="w-8 h-8 rounded-full bg-white/10 text-white/70 hover:text-white flex items-center justify-center text-sm transition">✕</button>
+        <button type="button" onclick="closeAddModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center text-sm transition active:scale-90">✕</button>
       </div>
 
-      <!-- Quick Preset Chips -->
+      <!-- Quick Preset Chips (Smooth horizontal scrollable pill row) -->
       <div>
         <div id="i18n-preset-title" class="text-[10px] text-[#86868b] uppercase font-bold tracking-wider mb-2">Быстрый выбор</div>
-        <div class="flex flex-wrap gap-1.5">
-          <button type="button" onclick="applyPreset('Яндекс Плюс', 299, 'RUB', 30, 'https://plus.yandex.ru', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">Яндекс Плюс</button>
-          <button type="button" onclick="applyPreset('Telegram Premium', 399, 'RUB', 30, 'https://telegram.org', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">TG Premium</button>
-          <button type="button" onclick="applyPreset('Spotify', 19.99, 'PLN', 30, 'https://spotify.com/account', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">Spotify</button>
-          <button type="button" onclick="applyPreset('Netflix', 14.99, 'USD', 30, 'https://netflix.com/cancel', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">Netflix</button>
-          <button type="button" onclick="applyPreset('YouTube Premium', 13.99, 'USD', 30, 'https://youtube.com/paid_memberships', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">YouTube</button>
-          <button type="button" onclick="applyPreset('iCloud+', 149, 'RUB', 30, 'https://appleid.apple.com', event)" class="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white transition active:scale-95">iCloud+</button>
+        <div class="flex overflow-x-auto no-scrollbar gap-2 pb-1 -mx-1 px-1">
+          <button type="button" onclick="applyPreset('Яндекс Плюс', 299, 'RUB', 30, 'https://plus.yandex.ru', event)" class="flex-shrink-0 text-xs px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 shadow-sm">Яндекс Плюс</button>
+          <button type="button" onclick="applyPreset('Telegram Premium', 399, 'RUB', 30, 'https://telegram.org', event)" class="flex-shrink-0 text-xs px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 shadow-sm">TG Premium</button>
+          <button type="button" onclick="applyPreset('Spotify', 19.99, 'PLN', 30, 'https://spotify.com/account', event)" class="flex-shrink-0 text-xs px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 shadow-sm">Spotify</button>
+          <button type="button" onclick="applyPreset('Netflix', 14.99, 'USD', 30, 'https://netflix.com/cancel', event)" class="flex-shrink-0 text-xs px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 shadow-sm">Netflix</button>
+          <button type="button" onclick="applyPreset('YouTube Premium', 13.99, 'USD', 30, 'https://youtube.com/paid_memberships', event)" class="flex-shrink-0 text-xs px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 shadow-sm">YouTube</button>
+          <button type="button" onclick="applyPreset('iCloud+', 149, 'RUB', 30, 'https://appleid.apple.com', event)" class="flex-shrink-0 text-xs px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 shadow-sm">iCloud+</button>
         </div>
       </div>
 
-      <!-- Form with Smooth Keyboard Support -->
+      <!-- Form with Smooth Mobile UX -->
       <form id="add-sub-form" onsubmit="submitNewSub(event)" class="space-y-4">
         
         <!-- Service Name -->
@@ -483,36 +532,42 @@
           <div>
             <label id="i18n-lbl-curr" class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Валюта</label>
             <div class="grid grid-cols-4 gap-1 bg-[#1c1c20] border border-white/15 p-1 rounded-xl">
-              <button type="button" onclick="setFormCurrency('RUB')" id="f-curr-RUB" class="form-curr-pill py-1.5 rounded-lg text-xs font-bold transition bg-[#0071e3] text-white">₽</button>
-              <button type="button" onclick="setFormCurrency('BYN')" id="f-curr-BYN" class="form-curr-pill py-1.5 rounded-lg text-xs font-medium transition text-white/60 hover:text-white">Br</button>
-              <button type="button" onclick="setFormCurrency('USD')" id="f-curr-USD" class="form-curr-pill py-1.5 rounded-lg text-xs font-medium transition text-white/60 hover:text-white">$</button>
-              <button type="button" onclick="setFormCurrency('PLN')" id="f-curr-PLN" class="form-curr-pill py-1.5 rounded-lg text-xs font-medium transition text-white/60 hover:text-white">zł</button>
+              <button type="button" onclick="setFormCurrency('RUB')" id="f-curr-RUB" class="form-curr-pill py-2 rounded-lg text-xs font-bold transition bg-[#0071e3] text-white shadow-sm">₽</button>
+              <button type="button" onclick="setFormCurrency('BYN')" id="f-curr-BYN" class="form-curr-pill py-2 rounded-lg text-xs font-medium transition text-white/60 hover:text-white">Br</button>
+              <button type="button" onclick="setFormCurrency('USD')" id="f-curr-USD" class="form-curr-pill py-2 rounded-lg text-xs font-medium transition text-white/60 hover:text-white">$</button>
+              <button type="button" onclick="setFormCurrency('PLN')" id="f-curr-PLN" class="form-curr-pill py-2 rounded-lg text-xs font-medium transition text-white/60 hover:text-white">zł</button>
             </div>
             <input type="hidden" id="form-currency" value="RUB">
           </div>
         </div>
 
-        <!-- Period Row with Direct Keyboard Input and Quick Buttons -->
+        <!-- Billing Period (Touch Preset Chips + Direct Input) -->
         <div>
           <label id="i18n-lbl-period" class="block text-[11px] text-[#86868b] uppercase font-bold tracking-wider mb-1.5">Период списания (дней)</label>
-          <div class="flex items-center space-x-2">
-            <input type="number" id="form-period" value="30" min="1" max="3650" required class="w-28 bg-[#1c1c20] border border-white/15 rounded-xl px-3 py-2 text-center text-base text-white focus:outline-none focus:border-[#0071e3] transition">
-            <div class="flex-1 flex gap-1.5">
-              <button type="button" onclick="setFormPeriod(30)" id="i18n-chip-30d" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">30 дн.</button>
-              <button type="button" onclick="setFormPeriod(365)" id="i18n-chip-1yr" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">1 год</button>
-              <button type="button" onclick="setFormPeriod(7)" id="i18n-chip-7d" class="flex-1 py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition">7 дн.</button>
+          <div class="space-y-2">
+            <!-- Quick Period Buttons -->
+            <div class="grid grid-cols-4 gap-1.5">
+              <button type="button" onclick="setFormPeriod(7)" id="i18n-chip-7d" class="period-chip py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 text-center">7 дн.</button>
+              <button type="button" onclick="setFormPeriod(30)" id="i18n-chip-30d" class="period-chip py-2 text-xs rounded-xl bg-[#0071e3]/20 border border-[#0071e3]/40 text-[#2997ff] font-semibold transition active:scale-95 text-center">30 дн.</button>
+              <button type="button" onclick="setFormPeriod(90)" id="i18n-chip-90d" class="period-chip py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 text-center">90 дн.</button>
+              <button type="button" onclick="setFormPeriod(365)" id="i18n-chip-1yr" class="period-chip py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 text-center">1 год</button>
+            </div>
+            <!-- Direct Days Input -->
+            <div class="relative">
+              <input type="number" id="form-period" value="30" min="1" max="3650" required class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white focus:outline-none focus:border-[#0071e3] transition">
+              <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-[#86868b] pointer-events-none" id="i18n-lbl-days-unit">дней</span>
             </div>
           </div>
         </div>
 
-        <!-- Next Billing Date with Quick Buttons -->
+        <!-- Next Billing Date with Quick Chips -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <label id="i18n-lbl-date" class="text-[11px] text-[#86868b] uppercase font-bold tracking-wider">Дата списания</label>
-            <div class="flex space-x-2">
-              <button type="button" onclick="setOffsetDate(0)" id="i18n-date-today" class="text-[11px] text-[#2997ff] hover:underline">Сегодня</button>
-              <button type="button" onclick="setOffsetDate(30)" id="i18n-date-30d" class="text-[11px] text-[#2997ff] hover:underline">+30 дн.</button>
-              <button type="button" onclick="setOffsetDate(365)" id="i18n-date-1yr" class="text-[11px] text-[#2997ff] hover:underline">+1 год</button>
+            <div class="flex space-x-1.5">
+              <button type="button" onclick="setOffsetDate(0)" id="i18n-date-today" class="date-chip text-[11px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-[#2997ff] font-medium transition active:scale-95">Сегодня</button>
+              <button type="button" onclick="setOffsetDate(30)" id="i18n-date-30d" class="date-chip text-[11px] px-2.5 py-1 rounded-lg bg-[#0071e3]/20 border border-[#0071e3]/40 text-white font-medium transition active:scale-95">+30 дн.</button>
+              <button type="button" onclick="setOffsetDate(365)" id="i18n-date-1yr" class="date-chip text-[11px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-[#2997ff] font-medium transition active:scale-95">+1 год</button>
             </div>
           </div>
           <input type="date" id="form-date" required class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white focus:outline-none focus:border-[#0071e3] transition cursor-pointer">
@@ -524,7 +579,7 @@
           <input type="url" id="form-url" placeholder="https://service.com/cancel" class="w-full bg-[#1c1c20] border border-white/15 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-white/25 focus:outline-none focus:border-[#0071e3] transition">
         </div>
 
-        <button type="submit" id="submit-btn" class="w-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold py-3.5 rounded-xl transition text-base flex items-center justify-center space-x-2 mt-2 shadow-lg shadow-[#0071e3]/20 active:scale-[0.99]">
+        <button type="submit" id="submit-btn" class="w-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold py-3.5 rounded-2xl transition text-base flex items-center justify-center space-x-2 mt-4 shadow-lg shadow-[#0071e3]/25 active:scale-[0.98]">
           <span id="i18n-btn-save-text">Сохранить подписку</span>
         </button>
       </form>
@@ -537,6 +592,7 @@
         account: "Личный кабинет",
         annual_spend: "В С Е Г О   В   Г О Д",
         active: "Активно",
+        paused: "Пауза",
         calendar: "Календарь списаний",
         this_month: "В этом месяце",
         normal: "В норме",
@@ -553,9 +609,11 @@
         price: "Стоимость",
         currency: "Валюта",
         period_days: "Период списания (дней)",
-        d30: "30 дн.",
-        y1: "1 год",
         d7: "7 дн.",
+        d30: "30 дн.",
+        d90: "90 дн.",
+        y1: "1 год",
+        days_unit: "дней",
         billing_date: "Дата списания",
         today: "Сегодня",
         p30d: "+30 дн.",
@@ -591,6 +649,7 @@
         account: "Асабісты кабінет",
         annual_spend: "У С Я Г О   Ў   Г О Д",
         active: "Актыўна",
+        paused: "Паўза",
         calendar: "Каляндар спісанняў",
         this_month: "У гэтым месяцы",
         normal: "У норме",
@@ -607,9 +666,11 @@
         price: "Кошт",
         currency: "Валюта",
         period_days: "Перыяд спісання (дзён)",
-        d30: "30 дн.",
-        y1: "1 год",
         d7: "7 дн.",
+        d30: "30 дн.",
+        d90: "90 дн.",
+        y1: "1 год",
+        days_unit: "дзён",
         billing_date: "Дата спісання",
         today: "Сёння",
         p30d: "+30 дн.",
@@ -645,6 +706,7 @@
         account: "My Account",
         annual_spend: "A N N U A L   T O T A L",
         active: "Active",
+        paused: "Paused",
         calendar: "Payment Calendar",
         this_month: "This month",
         normal: "On track",
@@ -661,9 +723,11 @@
         price: "Amount",
         currency: "Currency",
         period_days: "Billing Period (days)",
-        d30: "30 d.",
-        y1: "1 yr",
         d7: "7 d.",
+        d30: "30 d.",
+        d90: "90 d.",
+        y1: "1 yr",
+        days_unit: "days",
         billing_date: "Billing Date",
         today: "Today",
         p30d: "+30 d.",
@@ -699,6 +763,7 @@
         account: "Moje Konto",
         annual_spend: "R O C Z N I E   R A Z E M",
         active: "Aktywne",
+        paused: "Wstrzymana",
         calendar: "Kalendarz płatności",
         this_month: "W tym miesiącu",
         normal: "W normie",
@@ -715,9 +780,11 @@
         price: "Kwota",
         currency: "Waluta",
         period_days: "Okres rozliczeniowy (dni)",
-        d30: "30 dni",
-        y1: "1 rok",
         d7: "7 dni",
+        d30: "30 dni",
+        d90: "90 dni",
+        y1: "1 rok",
+        days_unit: "dni",
         billing_date: "Data płatności",
         today: "Dzisiaj",
         p30d: "+30 dni",
@@ -801,11 +868,11 @@
       const dict = I18N[lang] || I18N.ru;
 
       document.querySelectorAll('.lang-pill').forEach(btn => {
-        btn.className = 'lang-pill px-1.5 py-1 rounded-lg transition text-white/50 hover:text-white';
+        btn.className = 'lang-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-[11px] active:scale-95';
       });
       const activeBtn = document.getElementById('lang-btn-' + lang);
       if (activeBtn) {
-        activeBtn.className = 'lang-pill px-1.5 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm';
+        activeBtn.className = 'lang-pill flex-1 py-1.5 text-center rounded-lg transition bg-white/20 text-white font-semibold text-[11px] shadow-sm active:scale-95';
       }
 
       const setText = (id, val) => {
@@ -829,9 +896,11 @@
       setText('i18n-lbl-price', dict.price);
       setText('i18n-lbl-curr', dict.currency);
       setText('i18n-lbl-period', dict.period_days);
-      setText('i18n-chip-30d', dict.d30);
-      setText('i18n-chip-1yr', dict.y1);
       setText('i18n-chip-7d', dict.d7);
+      setText('i18n-chip-30d', dict.d30);
+      setText('i18n-chip-90d', dict.d90);
+      setText('i18n-chip-1yr', dict.y1);
+      setText('i18n-lbl-days-unit', dict.days_unit);
       setText('i18n-lbl-date', dict.billing_date);
       setText('i18n-date-today', dict.today);
       setText('i18n-date-30d', dict.p30d);
@@ -1173,13 +1242,13 @@
       if (tab === 'analytics') {
         vAnalytics.classList.remove('hidden');
         vSubs.classList.add('hidden');
-        nAnalytics.className = 'dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white bg-white/15 font-semibold';
-        nSubs.className = 'dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white/50 hover:text-white font-medium';
+        nAnalytics.className = 'dock-pill flex-1 flex flex-col items-center py-2.5 rounded-full transition text-white bg-white/15 font-semibold active:scale-95';
+        nSubs.className = 'dock-pill flex-1 flex flex-col items-center py-2.5 rounded-full transition text-white/50 hover:text-white font-medium active:scale-95';
       } else {
         vAnalytics.classList.add('hidden');
         vSubs.classList.remove('hidden');
-        nSubs.className = 'dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white bg-white/15 font-semibold';
-        nAnalytics.className = 'dock-pill flex-1 flex flex-col items-center py-2 rounded-full transition text-white/50 hover:text-white font-medium';
+        nSubs.className = 'dock-pill flex-1 flex flex-col items-center py-2.5 rounded-full transition text-white bg-white/15 font-semibold active:scale-95';
+        nAnalytics.className = 'dock-pill flex-1 flex flex-col items-center py-2.5 rounded-full transition text-white/50 hover:text-white font-medium active:scale-95';
       }
 
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -1190,11 +1259,11 @@
       AudioFX.click();
       state.currency = curr;
       document.querySelectorAll('.curr-pill').forEach(btn => {
-        btn.className = 'curr-pill px-2.5 py-1 rounded-lg transition text-white/50 hover:text-white';
+        btn.className = 'curr-pill flex-1 py-1.5 text-center rounded-lg transition text-white/50 hover:text-white font-medium text-xs active:scale-95';
       });
       const activeBtn = document.getElementById('curr-btn-' + curr);
       if (activeBtn) {
-        activeBtn.className = 'curr-pill px-2.5 py-1 rounded-lg transition bg-white/20 text-white font-semibold shadow-sm';
+        activeBtn.className = 'curr-pill flex-1 py-1.5 text-center rounded-lg transition bg-white/20 text-white font-semibold text-xs shadow-sm active:scale-95';
       }
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
       loadData();
@@ -1342,7 +1411,7 @@
         totalEl.innerText = `0 ${sym}`;
         monthlyEl.innerText = `0 ${sym} ${dict.per_month_short}`;
         badgeEl.innerText = `0 ${dict.active_word(0)}`;
-        breakdownEl.innerHTML = `<div class="col-span-2 text-center text-[#86868b] py-3 text-xs">${dict.no_active_subs}</div>`;
+        breakdownEl.innerHTML = `<div class="col-span-1 sm:col-span-2 text-center text-[#86868b] py-3 text-xs">${dict.no_active_subs}</div>`;
         prevTotal = 0;
         prevMonthly = 0;
         return;
@@ -1475,6 +1544,7 @@
       }
     }
 
+    // Modern Mobile-First Subscription Card Layout
     function renderSubscriptionsList() {
       const dict = I18N[state.lang] || I18N.ru;
       const dateLocale = state.lang === 'be' ? 'be-BY' : (state.lang === 'en' ? 'en-US' : (state.lang === 'pl' ? 'pl-PL' : 'ru-RU'));
@@ -1489,7 +1559,7 @@
             </div>
             <div class="text-sm font-semibold text-white">${dict.empty_title}</div>
             <div class="text-xs text-[#86868b] max-w-xs mx-auto leading-relaxed">${dict.empty_desc}</div>
-            <button onclick="openAddModal(event)" class="bg-[#0071e3] text-white text-xs px-5 py-2 rounded-full font-medium transition mt-2 shadow-sm active:scale-95">
+            <button onclick="openAddModal(event)" class="bg-[#0071e3] hover:bg-[#0077ed] text-white text-xs px-6 py-2.5 rounded-full font-semibold transition mt-2 shadow-md active:scale-95">
               ${dict.empty_btn}
             </button>
           </div>
@@ -1501,7 +1571,7 @@
         const sym = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
         const isActive = sub.is_active;
         const card = document.createElement('div');
-        card.className = `glass-card p-4 transition ${isActive ? '' : 'opacity-60'}`;
+        card.className = `glass-card p-4 transition ${isActive ? '' : 'opacity-65'}`;
 
         let daysNotice = '';
         if (sub.next_billing_date) {
@@ -1526,56 +1596,81 @@
           }
         }
 
-        const cancelBtn = sub.cancel_url
-          ? `<a href="${sub.cancel_url}" target="_blank" onclick="event.stopPropagation()" class="text-[11px] text-[#2997ff] hover:underline flex items-center space-x-0.5"><span>↗ ${dict.cancel_short}</span></a>`
-          : '';
-
         const brandColor = APPLE_COLORS[i % APPLE_COLORS.length];
+        const statusLabel = isActive ? dict.active : (dict.paused || 'Пауза');
 
         card.innerHTML = `
           <div class="card-glare"></div>
-          <div class="relative z-10 flex items-center justify-between">
-            <div class="flex items-center space-x-3 truncate">
-              
-              <!-- Apple Service Avatar Badge -->
-              <div class="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-base font-bold text-white flex-shrink-0 relative" style="box-shadow: 0 0 12px ${brandColor}22">
-                <span style="color: ${brandColor}">${sub.service_name.charAt(0).toUpperCase()}</span>
-                ${isActive ? `<span class="w-2 h-2 rounded-full absolute -top-0.5 -right-0.5 bg-[#30d158] radar-pulse"></span>` : ''}
+          <div class="relative z-10 space-y-3">
+            <!-- Top Block: Service Info & Price -->
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center space-x-3 min-w-0 flex-1">
+                <!-- Apple Service Avatar Badge -->
+                <div class="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-lg font-bold text-white flex-shrink-0 relative" style="box-shadow: 0 0 14px ${brandColor}25">
+                  <span style="color: ${brandColor}">${sub.service_name.charAt(0).toUpperCase()}</span>
+                  ${isActive ? `<span class="sub-radar-dot w-2 h-2 rounded-full absolute -top-0.5 -right-0.5 bg-[#30d158] radar-pulse"></span>` : ''}
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm sm:text-base font-semibold text-white truncate leading-tight">
+                    ${sub.service_name}
+                  </div>
+                  <div class="text-xs text-[#86868b] mt-1 flex items-center gap-1.5 flex-wrap">
+                    ${daysNotice}
+                    <span class="text-white/20">•</span>
+                    <span>${sub.period_days} ${dict.days_short}</span>
+                  </div>
+                </div>
               </div>
 
-              <div class="truncate">
-                <div class="text-sm font-semibold text-white truncate flex items-center space-x-1.5">
-                  <span>${sub.service_name}</span>
-                  ${sub.cancel_url ? cancelBtn : ''}
+              <!-- Price & Billing Interval -->
+              <div class="text-right flex-shrink-0">
+                <div class="text-base sm:text-lg font-bold text-white tracking-tight">
+                  ${sub.price} ${sym}
                 </div>
-                <div class="text-[11px] mt-0.5">
-                  ${daysNotice}
+                <div class="text-[10px] text-[#86868b] font-medium">
+                  ${sub.period_days >= 330 ? dict.per_year_short : dict.per_month_short}
                 </div>
               </div>
             </div>
 
-            <div class="flex items-center space-x-3 flex-shrink-0">
-              <div class="text-right">
-                <div class="text-sm font-bold text-white">${sub.price} ${sym}</div>
-                <div class="text-[10px] text-[#86868b]">${sub.period_days} ${dict.days_short}</div>
-              </div>
+            <!-- Subtle Divider -->
+            <div class="h-px bg-white/[0.06] w-full"></div>
 
-              <!-- Apple iOS Toggle Switch -->
-              <label class="relative inline-flex items-center cursor-pointer">
+            <!-- Bottom Actions Row: Status Toggle + Action Buttons -->
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              <!-- Left: iOS Toggle Switch with Label -->
+              <label class="inline-flex items-center gap-2 cursor-pointer select-none py-1">
                 <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleSub(${sub.id}, this, event)" class="sr-only cyber-toggle">
-                <div class="cyber-toggle-track w-11 h-6 bg-[#262629] rounded-full transition-all duration-300 relative border border-white/10">
-                  <div class="cyber-toggle-thumb absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-all duration-300 shadow-sm"></div>
+                <div class="cyber-toggle-track w-10 h-5 bg-[#262629] rounded-full transition-all duration-300 relative border border-white/10 flex-shrink-0">
+                  <div class="cyber-toggle-thumb absolute top-[1px] left-[1px] bg-white rounded-full h-4 w-4 transition-all duration-300 shadow-sm"></div>
                 </div>
+                <span class="sub-status-label text-xs font-medium ${isActive ? 'text-[#30d158]' : 'text-white/40'}">
+                  ${statusLabel}
+                </span>
               </label>
 
-              <!-- Renew Button -->
-              <button onclick="renewSub(${sub.id}, event)" title="${dict.renew}" class="w-7 h-7 rounded-full bg-white/5 hover:bg-[#30d158]/20 text-[#86868b] hover:text-[#30d158] flex items-center justify-center transition text-xs active:scale-90">
-                🔄
-              </button>
+              <!-- Right: Buttons Group (Renew + Cancel URL + Delete) -->
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <!-- Renew Button -->
+                <button onclick="renewSub(${sub.id}, event)" title="${dict.renew}" class="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-[#30d158]/20 border border-white/10 hover:border-[#30d158]/30 text-white/90 hover:text-[#30d158] transition text-xs font-semibold active:scale-95">
+                  <span class="text-xs">🔄</span>
+                  <span>${dict.renew}</span>
+                </button>
 
-              <button onclick="deleteSub(${sub.id}, event)" class="w-7 h-7 rounded-full bg-white/5 hover:bg-[#ff453a]/20 text-[#86868b] hover:text-[#ff453a] flex items-center justify-center transition text-xs active:scale-90">
-                ✕
-              </button>
+                <!-- Cancel URL Link (if provided) -->
+                ${sub.cancel_url ? `
+                  <a href="${sub.cancel_url}" target="_blank" onclick="event.stopPropagation()" title="${dict.cancel_short}" class="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-[#0071e3]/20 border border-white/10 hover:border-[#0071e3]/30 text-[#2997ff] transition text-xs font-semibold active:scale-95">
+                    <span>↗</span>
+                    <span class="hidden xs:inline">${dict.cancel_short}</span>
+                  </a>
+                ` : ''}
+
+                <!-- Delete Button -->
+                <button onclick="deleteSub(${sub.id}, event)" title="${dict.confirm_delete}" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-[#ff453a]/20 border border-white/10 hover:border-[#ff453a]/30 text-[#86868b] hover:text-[#ff453a] flex items-center justify-center transition text-xs font-bold active:scale-95">
+                  ✕
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -1619,6 +1714,20 @@
         const x = event.clientX || window.innerWidth / 2;
         const y = event.clientY || window.innerHeight / 2;
         particleSystem.burst(x, y, '#30d158', 20);
+      }
+
+      const card = checkbox.closest('.glass-card');
+      const statusLabel = checkbox.closest('label')?.querySelector('.sub-status-label');
+      if (statusLabel) {
+        statusLabel.innerText = checkbox.checked ? dict.active : (dict.paused || 'Пауза');
+        statusLabel.className = 'sub-status-label text-xs font-medium ' + (checkbox.checked ? 'text-[#30d158]' : 'text-white/40');
+      }
+      if (card) {
+        if (checkbox.checked) {
+          card.classList.remove('opacity-65');
+        } else {
+          card.classList.add('opacity-65');
+        }
       }
 
       const sub = state.subscriptions.find(s => s.id === subId);
@@ -1696,11 +1805,11 @@
       AudioFX.click();
       document.getElementById('form-currency').value = curr;
       document.querySelectorAll('.form-curr-pill').forEach(btn => {
-        btn.className = 'form-curr-pill py-1.5 rounded-lg text-xs font-medium transition text-white/60 hover:text-white';
+        btn.className = 'form-curr-pill py-2 rounded-lg text-xs font-medium transition text-white/60 hover:text-white';
       });
       const activeBtn = document.getElementById('f-curr-' + curr);
       if (activeBtn) {
-        activeBtn.className = 'form-curr-pill py-1.5 rounded-lg text-xs font-bold transition bg-[#0071e3] text-white shadow-sm';
+        activeBtn.className = 'form-curr-pill py-2 rounded-lg text-xs font-bold transition bg-[#0071e3] text-white shadow-sm';
       }
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
@@ -1708,8 +1817,36 @@
     function setFormPeriod(days) {
       AudioFX.click();
       document.getElementById('form-period').value = days;
+      document.querySelectorAll('.period-chip').forEach(btn => {
+        btn.className = 'period-chip py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 text-center';
+      });
+      const chipMap = { 7: 'i18n-chip-7d', 30: 'i18n-chip-30d', 90: 'i18n-chip-90d', 365: 'i18n-chip-1yr' };
+      const targetId = chipMap[days];
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) el.className = 'period-chip py-2 text-xs rounded-xl bg-[#0071e3]/20 border border-[#0071e3]/40 text-[#2997ff] font-semibold transition active:scale-95 text-center';
+      }
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
+
+    // Direct input watcher for form-period
+    document.addEventListener('DOMContentLoaded', () => {
+      const periodInput = document.getElementById('form-period');
+      if (periodInput) {
+        periodInput.addEventListener('input', (e) => {
+          const val = parseInt(e.target.value);
+          document.querySelectorAll('.period-chip').forEach(btn => {
+            btn.className = 'period-chip py-2 text-xs rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition active:scale-95 text-center';
+          });
+          const chipMap = { 7: 'i18n-chip-7d', 30: 'i18n-chip-30d', 90: 'i18n-chip-90d', 365: 'i18n-chip-1yr' };
+          const targetId = chipMap[val];
+          if (targetId) {
+            const el = document.getElementById(targetId);
+            if (el) el.className = 'period-chip py-2 text-xs rounded-xl bg-[#0071e3]/20 border border-[#0071e3]/40 text-[#2997ff] font-semibold transition active:scale-95 text-center';
+          }
+        });
+      }
+    });
 
     function setOffsetDate(daysOffset) {
       AudioFX.click();
@@ -1717,6 +1854,21 @@
       d.setDate(d.getDate() + daysOffset);
       const iso = d.toISOString().split('T')[0];
       document.getElementById('form-date').value = iso;
+
+      document.querySelectorAll('.date-chip').forEach(btn => {
+        btn.classList.remove('bg-[#0071e3]/20', 'border-[#0071e3]/40', 'text-white');
+        btn.classList.add('bg-white/5', 'text-[#2997ff]');
+      });
+      const offsetMap = { 0: 'i18n-date-today', 30: 'i18n-date-30d', 365: 'i18n-date-1yr' };
+      const targetId = offsetMap[daysOffset];
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.classList.remove('bg-white/5');
+          el.classList.add('bg-[#0071e3]/20', 'border-[#0071e3]/40', 'text-white');
+        }
+      }
+
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
 
